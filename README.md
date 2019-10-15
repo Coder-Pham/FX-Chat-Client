@@ -1,2 +1,2 @@
 # FX-Chat
-Chat Application by JavaFX
+Chat Application by JavaFX test
