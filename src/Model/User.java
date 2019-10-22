@@ -2,23 +2,23 @@ package Model;
 
 public class User {
     private int id;
-    private String user_name;
+    private String username;
     private String password;
-    private String nick_name;
+    private String nickname;
 
-    User(int id, String user_name, String password, String nick_name) {
+    User(int id, String username, String password, String nickname) {
         this.id = id;
-        this.user_name = user_name;
+        this.username = username;
         this.password = password;
-        this.nick_name = nick_name;
+        this.nickname = nickname;
     }
 
-    public String getNick_name() {
-        return nick_name;
+    public String getNickname() {
+        return nickname;
     }
 
-    public void setNick_name(String nick_name) {
-        this.nick_name = nick_name;
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public int getId() {
@@ -29,12 +29,12 @@ public class User {
         this.id = id;
     }
 
-    public String getUser_name() {
-        return user_name;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUser_name(String user_name) {
-        this.user_name = user_name;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getPassword() {
