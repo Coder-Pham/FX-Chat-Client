@@ -30,7 +30,7 @@ public class Login implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        error.setVisible(false);
+        error.setVisible(true);
         username.clear();
         password.clear();
     }
