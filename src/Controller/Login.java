@@ -12,6 +12,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.URL;
@@ -42,22 +43,27 @@ public class Login implements Initializable {
     }
 
     @FXML
-    private void loginClick() throws IOException {
-//        TODO: Establish connection
+    private void loginClick() throws IOException, ClassNotFoundException {
+//      TODO: Establish connection
         User loginUser = new User(username.getText(), password.getText());
         Request loginRequest = new Request("login", loginUser);
 
         Socket socket = new Socket(ServerIP.hostname, Integer.parseInt(ServerIP.port));
+        ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
 
         objectOutputStream.writeObject(loginRequest);
-        socket.close();
 
 //      TODO: Retrieve data from server
+        Request response = (Request) objectInputStream.readObject();
 
 //      TODO: If successful login, then create new Stage - Scene for main
+        if (response.getAction().equals("success")) {
 
+        }
 //      TODO: If failed, reset scene
-
+        else {
+            resetScene();
+        }
     }
 }
