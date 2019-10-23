@@ -61,7 +61,7 @@
         <HBox alignment="TOP_RIGHT" prefHeight="54.0" prefWidth="600.0"/>
         <HBox alignment="TOP_RIGHT" prefHeight="84.0" prefWidth="600.0">
             <children>
-                <Label>
+                <Label fx:id="error">
                     <HBox.margin>
                         <Insets right="10.0" top="11.0"/>
                     </HBox.margin>
