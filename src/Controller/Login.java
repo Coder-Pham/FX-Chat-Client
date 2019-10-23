@@ -49,8 +49,8 @@ public class Login implements Initializable {
         Request loginRequest = new Request("login", loginUser);
 
         Socket socket = new Socket(ServerIP.hostname, Integer.parseInt(ServerIP.port));
-        ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+        ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
 
         objectOutputStream.writeObject(loginRequest);
 
