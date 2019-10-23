@@ -1,14 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXPasswordField?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="Controller.Login"
-            prefHeight="400.0" prefWidth="600.0">
-
-</AnchorPane>
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="444.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+    <children>
+        <HBox alignment="CENTER" prefHeight="170.0" prefWidth="600.0">
+            <children>
+                <ImageView fitHeight="227.0" fitWidth="231.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image url="@image/Logo.png" />
+                    </image>
+                </ImageView>
+            </children>
+        </HBox>
+        <HBox prefHeight="98.0" prefWidth="600.0">
+            <children>
+                <VBox prefHeight="105.0" prefWidth="391.0">
+                    <HBox.margin>
+                        <Insets left="105.0" />
+                    </HBox.margin>
+                    <children>
+                        <Label fx:id="userNameLabel" text="Username:">
+                            <VBox.margin>
+                                <Insets bottom="10.0" />
+                            </VBox.margin>
+                        </Label>
+                  <JFXTextField fx:id="username" />
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+        <HBox prefHeight="39.0" prefWidth="600.0">
+            <children>
+                <VBox prefHeight="100.0" prefWidth="391.0">
+                    <HBox.margin>
+                        <Insets left="105.0" />
+                    </HBox.margin>
+                    <children>
+                        <Label fx:id="passwordLabel" text="Password:">
+                            <VBox.margin>
+                                <Insets bottom="10.0" top="20.0" />
+                            </VBox.margin>
+                        </Label>
+                  <JFXPasswordField fx:id="password" />
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+        <HBox alignment="TOP_RIGHT" prefHeight="54.0" prefWidth="600.0" />
+        <HBox alignment="TOP_RIGHT" prefHeight="84.0" prefWidth="600.0">
+            <children>
+                <Label>
+                    <HBox.margin>
+                        <Insets right="10.0" top="11.0" />
+                    </HBox.margin>
+                </Label>
+            <JFXButton fx:id="loginButton" onAction="#loginClick" prefHeight="45.0" prefWidth="78.0" style="-fx-background-radius: 8; -fx-background-color: #60A526;" text="Login" textFill="WHITE">
+               <HBox.margin>
+                  <Insets right="105.0" />
+               </HBox.margin>
+               <font>
+                  <Font size="19.0" />
+               </font>
+            </JFXButton>
+            </children>
+        </HBox>
+        <HBox alignment="CENTER" prefHeight="123.0" prefWidth="600.0">
+            <children>
+            <JFXButton prefHeight="67.0" prefWidth="124.0" style="-fx-background-radius: 8; -fx-background-color: #014EF2;" text="Register" textFill="WHITE">
+               <font>
+                  <Font size="23.0" />
+               </font>
+            </JFXButton>
+            </children>
+        </HBox>
+    </children>
+</VBox>
