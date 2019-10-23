@@ -1,6 +1,6 @@
 package Model;
 
-public class User {
+public class User extends Model {
     private int id;
     private String username;
     private String password;
@@ -11,6 +11,11 @@ public class User {
         this.username = username;
         this.password = password;
         this.nickname = nickname;
+    }
+
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
     }
 
     public String getNickname() {
@@ -43,5 +48,10 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return "ID: " + id + ", Username: " + username + ", Password: " + password + ", Nickname: " + nickname;
     }
 }
