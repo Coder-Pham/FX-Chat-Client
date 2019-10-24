@@ -82,7 +82,7 @@
             <children>
                 <JFXButton prefHeight="50.0" prefWidth="120.0"
                            style="-fx-background-radius: 8; -fx-background-color: #014EF2;" text="Register"
-                           textFill="WHITE">
+                           textFill="WHITE" onAction="#registerClick">
                     <font>
                         <Font size="23.0"/>
                     </font>
