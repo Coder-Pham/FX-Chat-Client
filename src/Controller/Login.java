@@ -1,6 +1,7 @@
 package Controller;
 
 import Connection.Action;
+import Connection.ServerHandler;
 import Connection.Signal;
 import Model.User;
 import Model.ServerIP;
@@ -10,14 +11,10 @@ import com.jfoenix.controls.JFXPasswordField;
 import com.jfoenix.controls.JFXTextField;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -30,19 +27,22 @@ public class Login implements Initializable {
     @FXML
     private JFXPasswordField password;
     @FXML
+    private JFXTextField nickname;
+    @FXML
     private JFXButton loginButton;
     @FXML
     private Label error;
-
-    private ObjectOutputStream objectOutputStream;
-    private ObjectInputStream objectInputStream;
-    private Signal response;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         error.setVisible(false);
         username.clear();
         password.clear();
+        try {
+            ServerHandler.init();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void resetScene() {
@@ -58,15 +58,11 @@ public class Login implements Initializable {
         User loginUser = new User(0, username.getText(), password.getText(), "");
         Signal loginRequest = new Signal(Action.LOGIN, true, loginUser, "");
 
-        Socket socket = new Socket(ServerIP.hostname, ServerIP.port);
-        objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-        objectOutputStream.writeObject(loginRequest);
-        objectOutputStream.flush();
+        ServerHandler.getObjectOutputStream().writeObject(loginRequest);
+        ServerHandler.getObjectOutputStream().flush();
 
 //      TODO: Retrieve data from server
-        objectInputStream = new ObjectInputStream(socket.getInputStream());
-        response = (Signal) objectInputStream.readObject();
-        socket.close();
+        Signal response = (Signal) ServerHandler.getObjectInputStream().readObject();
 
 //      TODO: If successful login, then create new Stage - Scene for main
         if (response.isStatus()) {
@@ -80,6 +76,13 @@ public class Login implements Initializable {
     }
 
     @FXML
-    public void registerClick(ActionEvent actionEvent) {
+    public void registerClick(ActionEvent actionEvent) throws IOException, ClassNotFoundException {
+        User registerUser = new User(0, username.getText(), password.getText(), nickname.getText());
+        Signal registerRequest = new Signal(Action.REGISTER, true, registerUser, "");
+
+        ServerHandler.getObjectOutputStream().writeObject(registerRequest);
+        ServerHandler.getObjectOutputStream().flush();
+
+        Signal response = (Signal) ServerHandler.getObjectInputStream().readObject();
     }
 }
