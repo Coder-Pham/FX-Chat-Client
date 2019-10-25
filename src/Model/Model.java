@@ -2,5 +2,6 @@ package Model;
 
 import java.io.Serializable;
 
-abstract class Model implements Serializable {
+public abstract class Model implements Serializable {
+    private static final long serialVersionUID = 4L;
 }

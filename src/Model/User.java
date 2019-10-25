@@ -6,16 +6,11 @@ public class User extends Model {
     private String password;
     private String nickname;
 
-    User(int id, String username, String password, String nickname) {
+    public User(int id, String username, String password, String nickname) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.nickname = nickname;
-    }
-
-    public User(String username, String password) {
-        this.username = username;
-        this.password = password;
     }
 
     public String getNickname() {
