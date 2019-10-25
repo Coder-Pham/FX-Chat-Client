@@ -31,12 +31,14 @@
                         <Insets left="105.0"/>
                     </HBox.margin>
                     <children>
-                        <Label fx:id="userNameLabel" text="Username:">
+                        <Label fx:id="userNameLabel" text="Username:"
+                               style="-fx-font-weight: bold; -fx-font-size: 14; -fx-font-family: Font Awesome 5 Free">
                             <VBox.margin>
                                 <Insets bottom="10.0"/>
                             </VBox.margin>
                         </Label>
-                        <JFXTextField fx:id="username"/>
+                        <JFXTextField fx:id="username"
+                                      style="-fx-font-weight: bold; -fx-font-size: 14; -fx-font-family: Font Awesome 5 Free"/>
                     </children>
                 </VBox>
             </children>
@@ -48,7 +50,8 @@
                         <Insets left="105.0"/>
                     </HBox.margin>
                     <children>
-                        <Label fx:id="passwordLabel" text="Password:">
+                        <Label fx:id="passwordLabel" text="Password:"
+                               style="-fx-font-weight: bold; -fx-font-size: 14; -fx-font-family: Font Awesome 5 Free">
                             <VBox.margin>
                                 <Insets bottom="10.0" top="20.0"/>
                             </VBox.margin>
@@ -61,7 +64,8 @@
         <HBox alignment="TOP_RIGHT" prefHeight="54.0" prefWidth="600.0"/>
         <HBox alignment="TOP_RIGHT" prefHeight="84.0" prefWidth="600.0">
             <children>
-                <Label fx:id="error">
+                <Label fx:id="error" textFill="red"
+                       style="-fx-font-weight: bold; -fx-font-size: 14; -fx-font-family: Font Awesome 5 Free">
                     <HBox.margin>
                         <Insets right="10.0" top="11.0"/>
                     </HBox.margin>
@@ -84,7 +88,7 @@
                            style="-fx-background-radius: 8; -fx-background-color: #014EF2;" text="Register"
                            textFill="WHITE" onAction="#registerClick">
                     <font>
-                        <Font size="23.0"/>
+                        <Font size="22.0"/>
                     </font>
                 </JFXButton>
             </children>
