@@ -1,5 +1,6 @@
 package Controller;
 
+import Connection.Action;
 import Connection.Signal;
 import Model.User;
 import Model.ServerIP;
@@ -16,6 +17,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -53,19 +55,16 @@ public class Login implements Initializable {
     @FXML
     private void loginClick(ActionEvent actionEvent) throws IOException, ClassNotFoundException {
 //      TODO: Establish connection
-        User loginUser = new User(username.getText(), password.getText());
-        Signal loginRequest = new Signal("login", true, loginUser, "");
+        User loginUser = new User(0, username.getText(), password.getText(), "");
+        Signal loginRequest = new Signal(Action.LOGIN, true, loginUser, "");
 
         Socket socket = new Socket(ServerIP.hostname, ServerIP.port);
         objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-        objectInputStream = new ObjectInputStream(socket.getInputStream());
-
         objectOutputStream.writeObject(loginRequest);
         objectOutputStream.flush();
-        socket.close();
 
 //      TODO: Retrieve data from server
-
+        objectInputStream = new ObjectInputStream(socket.getInputStream());
         response = (Signal) objectInputStream.readObject();
         socket.close();
 
@@ -74,8 +73,9 @@ public class Login implements Initializable {
             System.out.println("Login Successful");
         }
 //      TODO: If failed, reset scene
-        else {
+        else if (response.getAction().equals(Action.LOGIN)) {
             resetScene();
+            System.out.println(response.getError());
         }
     }
 
