@@ -2,7 +2,7 @@ package Model;
 
 import javafx.stage.Stage;
 
-public class StageView {
+public final class StageView {
     private static Stage currentstage;
 
     public StageView(Stage stage) {

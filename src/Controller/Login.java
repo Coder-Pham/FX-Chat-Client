@@ -3,21 +3,19 @@ package Controller;
 import Connection.Action;
 import Connection.ServerHandler;
 import Connection.Signal;
+import Model.StageView;
 import Model.User;
-import Model.ServerIP;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXPasswordField;
 import com.jfoenix.controls.JFXTextField;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -27,9 +25,9 @@ public class Login implements Initializable {
     @FXML
     private JFXPasswordField password;
     @FXML
-    private JFXTextField nickname;
-    @FXML
     private JFXButton loginButton;
+    @FXML
+    private JFXButton registerButton;
     @FXML
     private Label error;
 
@@ -38,11 +36,6 @@ public class Login implements Initializable {
         error.setVisible(false);
         username.clear();
         password.clear();
-        try {
-            ServerHandler.init();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private void resetScene() {
@@ -76,13 +69,8 @@ public class Login implements Initializable {
     }
 
     @FXML
-    public void registerClick(ActionEvent actionEvent) throws IOException, ClassNotFoundException {
-        User registerUser = new User(0, username.getText(), password.getText(), nickname.getText());
-        Signal registerRequest = new Signal(Action.REGISTER, true, registerUser, "");
-
-        ServerHandler.getObjectOutputStream().writeObject(registerRequest);
-        ServerHandler.getObjectOutputStream().flush();
-
-        Signal response = (Signal) ServerHandler.getObjectInputStream().readObject();
+    public void registerClick(ActionEvent actionEvent) throws IOException {
+//        TODO: Switch Register scene
+        StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Register.fxml")));
     }
 }
