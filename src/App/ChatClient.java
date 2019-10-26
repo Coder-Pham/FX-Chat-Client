@@ -19,6 +19,8 @@ public class ChatClient extends Application {
         Parent root = FXMLLoader.load(getClass().getResource("../View/Login.fxml"));
         Scene scene = new Scene(root, 600, 444);
 
+        scene.getStylesheets().add(getClass().getResource("../Resources/Styles/login-register.css").toExternalForm());
+
         primaryStage.setTitle("FX Chat");
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);

@@ -1,0 +1,15 @@
+.same-label{
+    -fx-font-weight: bold;
+    -fx-font-size: 14;
+    -fx-font-family: "Font Awesome 5 Free";
+}
+
+.login-button{
+    -fx-background-radius: 8;
+    -fx-background-color: #60A526;
+}
+
+.register-button{
+    -fx-background-radius: 8;
+    -fx-background-color: #014EF2;
+}
