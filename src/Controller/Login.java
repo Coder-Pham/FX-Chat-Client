@@ -36,11 +36,6 @@ public class Login implements Initializable {
         error.setVisible(false);
         username.clear();
         password.clear();
-        try {
-            ServerHandler.init();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private void resetScene() {
