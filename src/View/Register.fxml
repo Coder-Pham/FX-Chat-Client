@@ -11,11 +11,11 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="586.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.Login">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="436.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.Login">
     <children>
-        <HBox alignment="CENTER" prefHeight="131.0" prefWidth="600.0">
+        <HBox alignment="CENTER" prefHeight="51.0" prefWidth="600.0">
             <children>
-                <ImageView fitHeight="227.0" fitWidth="231.0" pickOnBounds="true" preserveRatio="true">
+                <ImageView fitHeight="108.0" fitWidth="143.0" pickOnBounds="true" preserveRatio="true">
                     <image>
                         <Image url="@../Resources/Images/Logo.png" />
                     </image>
@@ -90,29 +90,27 @@
             </VBox>
          </children>
       </HBox>
-        <HBox alignment="TOP_RIGHT" prefHeight="43.0" prefWidth="600.0" />
-        <HBox alignment="TOP_RIGHT" prefHeight="0.0" prefWidth="600.0">
+        <HBox alignment="TOP_RIGHT" prefHeight="82.0" prefWidth="600.0">
             <children>
                 <Label fx:id="error" styleClass="same-label" textFill="RED">
                     <HBox.margin>
-                        <Insets right="10.0" top="11.0" />
+                        <Insets right="10.0" top="19.0" />
                     </HBox.margin>
                 </Label>
+            <JFXButton fx:id="loginButton" onAction="#loginClick" prefHeight="38.0" prefWidth="102.0" styleClass="login-button" text="Login" textFill="WHITE">
+               <font>
+                  <Font size="19.0" />
+               </font>
+               <HBox.margin>
+                  <Insets right="10.0" top="8.0" />
+               </HBox.margin>
+            </JFXButton>
                 <JFXButton fx:id="registerButton" onAction="#registerClick" prefHeight="38.0" prefWidth="102.0" styleClass="register-button" text="Register" textFill="WHITE">
                     <HBox.margin>
-                        <Insets right="105.0" />
+                        <Insets right="105.0" top="8.0" />
                     </HBox.margin>
                     <font>
                         <Font size="19.0" />
-                    </font>
-                </JFXButton>
-            </children>
-        </HBox>
-        <HBox alignment="CENTER" prefHeight="97.0" prefWidth="600.0">
-            <children>
-                <JFXButton fx:id="loginButton" onAction="#loginClick" prefHeight="50.0" prefWidth="120.0" styleClass="login-button" text="Login" textFill="WHITE">
-                    <font>
-                        <Font size="22.0" />
                     </font>
                 </JFXButton>
             </children>

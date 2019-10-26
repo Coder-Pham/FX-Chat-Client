@@ -16,7 +16,7 @@ public class ChatClient extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("../View/Login.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("../View/Register.fxml"));
         Scene scene = new Scene(root, 600, 444);
 
         scene.getStylesheets().add(getClass().getResource("../Resources/Styles/login-register.css").toExternalForm());
