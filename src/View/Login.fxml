@@ -19,7 +19,7 @@
             <children>
                 <ImageView fitHeight="227.0" fitWidth="231.0" pickOnBounds="true" preserveRatio="true">
                     <image>
-                        <Image url="@image/Logo.png"/>
+                        <Image url="@../Resources/Images/Logo.png"/>
                     </image>
                 </ImageView>
             </children>
@@ -32,13 +32,13 @@
                     </HBox.margin>
                     <children>
                         <Label fx:id="userNameLabel" text="Username:"
-                               style="-fx-font-weight: bold; -fx-font-size: 14; -fx-font-family: Font Awesome 5 Free">
+                               styleClass="same-label">
                             <VBox.margin>
                                 <Insets bottom="10.0"/>
                             </VBox.margin>
                         </Label>
                         <JFXTextField fx:id="username"
-                                      style="-fx-font-weight: bold; -fx-font-size: 14; -fx-font-family: Font Awesome 5 Free"/>
+                                      styleClass="same-label"/>
                     </children>
                 </VBox>
             </children>
@@ -51,7 +51,7 @@
                     </HBox.margin>
                     <children>
                         <Label fx:id="passwordLabel" text="Password:"
-                               style="-fx-font-weight: bold; -fx-font-size: 14; -fx-font-family: Font Awesome 5 Free">
+                               styleClass="same-label">
                             <VBox.margin>
                                 <Insets bottom="10.0" top="20.0"/>
                             </VBox.margin>
@@ -64,14 +64,14 @@
         <HBox alignment="TOP_RIGHT" prefHeight="54.0" prefWidth="600.0"/>
         <HBox alignment="TOP_RIGHT" prefHeight="84.0" prefWidth="600.0">
             <children>
-                <Label fx:id="error" textFill="red"
-                       style="-fx-font-weight: bold; -fx-font-size: 14; -fx-font-family: Font Awesome 5 Free">
+                <Label fx:id="error" textFill="RED"
+                       styleClass="same-label">
                     <HBox.margin>
                         <Insets right="10.0" top="11.0"/>
                     </HBox.margin>
                 </Label>
                 <JFXButton fx:id="loginButton" onAction="#loginClick" prefHeight="45.0" prefWidth="78.0"
-                           style="-fx-background-radius: 8; -fx-background-color: #60A526;" text="Login"
+                           styleClass="login-button" text="Login"
                            textFill="WHITE">
                     <HBox.margin>
                         <Insets right="105.0"/>
@@ -84,8 +84,8 @@
         </HBox>
         <HBox alignment="CENTER" prefHeight="123.0" prefWidth="600.0">
             <children>
-                <JFXButton prefHeight="50.0" prefWidth="120.0"
-                           style="-fx-background-radius: 8; -fx-background-color: #014EF2;" text="Register"
+                <JFXButton fx:id="registerButton" prefHeight="50.0" prefWidth="120.0"
+                           styleClass="register-button" text="Register"
                            textFill="WHITE" onAction="#registerClick">
                     <font>
                         <Font size="22.0"/>
