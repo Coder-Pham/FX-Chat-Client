@@ -90,8 +90,8 @@ public class Register implements Initializable {
         }
 //      TODO: If failed, THROW ERROR MESSAGE FROM SERVER
         else if (response.getAction().equals(Action.REGISTER)) {
+            error.setVisible(true);
             error.setText(response.getError());
-//            System.out.println(response.getError());
         }
     }
 
