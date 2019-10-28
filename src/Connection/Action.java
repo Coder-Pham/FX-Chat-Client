@@ -2,5 +2,8 @@ package Connection;
 
 public enum Action {
     LOGIN,
-    REGISTER
+    REGISTER,
+    LOGOUT,
+    UOL,
+    MESSAGE
 }

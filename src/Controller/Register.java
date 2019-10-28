@@ -86,7 +86,11 @@ public class Register implements Initializable {
 
 //      TODO: If successful register, then create new Stage - Scene for main
         if (response.isStatus()) {
+            Login.currentUser = (User) response.getData();
             System.out.println("Register Successful");
+
+            StageView.setSize(844, 1000);
+            StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Message.fxml")));
         }
 //      TODO: If failed, THROW ERROR MESSAGE FROM SERVER
         else if (response.getAction().equals(Action.REGISTER)) {
