@@ -30,6 +30,7 @@ public class Login implements Initializable {
     private JFXButton registerButton;
     @FXML
     private Label error;
+    public static User currentUser;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -59,7 +60,11 @@ public class Login implements Initializable {
 
 //      TODO: If successful login, then create new Stage - Scene for main
         if (response.isStatus()) {
+            currentUser = (User) response.getData();
             System.out.println("Login Successful");
+
+            StageView.setSize(844, 1000);
+            StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Message.fxml")));
         }
 //      TODO: If failed, reset scene
         else if (response.getAction().equals(Action.LOGIN)) {
