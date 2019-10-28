@@ -28,9 +28,13 @@ public class Message implements Initializable {
     @FXML
     private Label userNickName;
 
+    @FXML
+    private Label friendNickName;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         userNickName.setText("Thien Huynh");
+        friendNickName.setText("Trong Nhan");
     }
 
     @FXML

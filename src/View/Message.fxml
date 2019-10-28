@@ -33,19 +33,40 @@
                <children>
                   <HBox prefHeight="68.0" prefWidth="450.0">
                      <children>
-                        <ImageView fitHeight="96.0" fitWidth="107.0" pickOnBounds="true" preserveRatio="true">
-                           <image>
-                              <Image url="@../Resources/Images/UserDefaultAvatar.png" />
-                           </image>
-                           <HBox.margin>
-                              <Insets left="10.0" top="3.0" />
-                           </HBox.margin>
-                        </ImageView>
-                        <Label fx:id="userNickName" text="Label">
-                           <HBox.margin>
-                              <Insets left="10.0" top="40.0" />
-                           </HBox.margin>
-                        </Label>
+                        <HBox prefHeight="99.0" prefWidth="275.0">
+                           <children>
+                              <ImageView fitHeight="96.0" fitWidth="107.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@../Resources/Images/UserDefaultAvatar.png" />
+                                 </image>
+                                 <HBox.margin>
+                                    <Insets left="10.0" top="3.0" />
+                                 </HBox.margin>
+                              </ImageView>
+                              <Label fx:id="userNickName" text="User">
+                                 <HBox.margin>
+                                    <Insets left="10.0" top="40.0" />
+                                 </HBox.margin>
+                              </Label>
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_RIGHT" prefHeight="99.0" prefWidth="275.0">
+                           <children>
+                              <Label fx:id="friendNickName" text="Friend">
+                                 <HBox.margin>
+                                    <Insets right="10.0" />
+                                 </HBox.margin>
+                              </Label>
+                              <ImageView fitHeight="96.0" fitWidth="107.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@../Resources/Images/Friend.png" />
+                                 </image>
+                                 <HBox.margin>
+                                    <Insets right="10.0" top="3.0" />
+                                 </HBox.margin>
+                              </ImageView>
+                           </children>
+                        </HBox>
                      </children>
                   </HBox>
                   <VBox minHeight="-Infinity" minWidth="-Infinity" prefHeight="666.0" prefWidth="450.0" />
