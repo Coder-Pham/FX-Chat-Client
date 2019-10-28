@@ -16,9 +16,9 @@
   <children>
     <MenuBar VBox.vgrow="NEVER">
       <menus>
-            <Menu fx:id="settingTab" mnemonicParsing="false" text="Settings">
+            <Menu fx:id="options" mnemonicParsing="false" text="Options">
                <items>
-                  <MenuItem fx:id="refreshOption" mnemonicParsing="false" onAction="#refreshClick" text="Refresh Users List" />
+                  <MenuItem fx:id="logoutOption" mnemonicParsing="false" onAction="#logoutClick" text="Logout" />
                </items></Menu>
       </menus>
     </MenuBar>

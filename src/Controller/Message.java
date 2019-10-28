@@ -23,8 +23,6 @@ public class Message implements Initializable {
     @FXML
     private VBox dynamicUserOnlineList;
 
-    private ArrayList<Friend> lst;
-
     @FXML
     private Label userNickName;
 
@@ -35,21 +33,27 @@ public class Message implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         userNickName.setText("Thien Huynh");
         friendNickName.setText("Trong Nhan");
+        ArrayList<Friend> lst = new ArrayList<Friend>();
+        lst.add(new Friend("A", "Thien Huynh"));
+        lst.add(new Friend("C", "Trong Nhan"));
+        lst.add(new Friend("E", "Quan Tran"));
+        lst.add(new Friend("G", "Duong Huynh"));
+        this.refreshUserList(lst);
     }
 
     @FXML
-    public void refreshClick(ActionEvent actionEvent) throws IOException {
-//        TODO: Refresh users list manually
-        // Test
-        lst = new ArrayList<Friend>();
-        this.lst.add(new Friend("A", "Thien Huynh"));
-        this.lst.add(new Friend("C", "Trong Nhan"));
-        this.lst.add(new Friend("E", "Quan Tran"));
-        this.lst.add(new Friend("G", "Duong Huynh"));
+    public void logoutClick(ActionEvent actionEvent) throws IOException {
+//        TODO: Logout
+
+    }
+
+    public void refreshUserList(ArrayList<Friend> lst){
+        // TODO: Refresh online users list
+
         InputStream inputIcon = getClass().getResourceAsStream("../Resources/Images/Online.png");
         Image image = new Image(inputIcon);
         this.dynamicUserOnlineList.getChildren().clear();
-        for (int i = 0; i < this.lst.size(); i++) {
+        for (int i = 0; i < lst.size(); i++) {
             ImageView showIcon = new ImageView(image);
             showIcon.setFitHeight(10);
             showIcon.setFitWidth(10);
