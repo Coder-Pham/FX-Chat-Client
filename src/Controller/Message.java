@@ -1,7 +1,6 @@
 package Controller;
 
 import Connection.Action;
-import Connection.Listener;
 import Connection.ServerHandler;
 import Connection.Signal;
 
@@ -9,6 +8,7 @@ import Model.StageView;
 import Model.User;
 import Model.UserOnlineList;
 import com.jfoenix.controls.JFXButton;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Message implements Initializable {
     @FXML
@@ -33,8 +34,9 @@ public class Message implements Initializable {
     private Label userNickName;
     @FXML
     private Label friendNickName;
-    private RefreshController refreshController;
+
     private Thread serverListener;
+    private AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -56,8 +58,37 @@ public class Message implements Initializable {
         }
 
 //        TODO: Start subThread for Listener
-        this.serverListener = new Thread(new Listener());
-        this.serverListener.start();
+        serverListener = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (!shuttingDown.get()) {
+                    try {
+                        Signal response = (Signal) ServerHandler.getObjectInputStream().readObject();
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                switch (response.getAction()) {
+                                    case UOL:
+                                        UserOnlineList userOnlineList = (UserOnlineList) response.getData();
+                                        for (int i = 0; i < userOnlineList.getUsers().size(); i++)
+                                            System.out.println(userOnlineList.getUsers().get(i).getNickname());
+
+                                        refreshUserList(userOnlineList.getUsers());
+                                        break;
+                                    case MESSAGE:
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        });
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        serverListener.start();
     }
 
     @FXML
@@ -68,7 +99,9 @@ public class Message implements Initializable {
         ServerHandler.getObjectOutputStream().flush();
 
 //        TODO: Force stop Listener thread
-        this.serverListener.interrupt();
+        serverListener.interrupt();
+        shuttingDown.set(true);
+//        Platform.exit();
 
 //        TODO: Switch back to login scene
         StageView.setSize(444, 600);
