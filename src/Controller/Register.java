@@ -6,17 +6,22 @@ import Connection.Signal;
 import Model.StageView;
 import Model.User;
 
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXPasswordField;
-import com.jfoenix.controls.JFXTextField;
+import com.jfoenix.controls.*;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
+import javafx.scene.text.Text;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
@@ -90,9 +95,7 @@ public class Register implements Initializable {
             Login.currentUser = (User) response.getData();
             System.out.println("Register Successful");
 
-            FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("../View/Message.fxml"));
-//            RefreshController.setController(messageLoader.getController());
-            StageView.getStage().setScene(new Scene(messageLoader.load(), 1000, 844));
+            this.registerSuccess();
         }
 //      TODO: If failed, THROW ERROR MESSAGE FROM SERVER
         else if (response.getAction().equals(Action.REGISTER)) {
@@ -105,5 +108,18 @@ public class Register implements Initializable {
     public void loginClick(ActionEvent actionEvent) throws IOException {
 //        TODO: switch scene to Login
         StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Login.fxml")));
+    }
+
+    private void registerSuccess() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Register Success");
+        alert.setHeaderText("Now you can login with:");
+        alert.setContentText("Username: \"" + Login.currentUser.getUsername() + "\" --- Nickname: \"" + Login.currentUser.getNickname() + "\"");
+        alert.showAndWait();
+        try {
+            StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Login.fxml")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

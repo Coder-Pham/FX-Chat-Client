@@ -8,16 +8,19 @@ import Model.StageView;
 import Model.User;
 import Model.UserOnlineList;
 import com.jfoenix.controls.JFXButton;
+import com.jfoenix.controls.JFXTextArea;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
@@ -34,6 +37,8 @@ public class Message implements Initializable {
     private Label userNickName;
     @FXML
     private Label friendNickName;
+    @FXML
+    private JFXTextArea textMessage;
 
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
@@ -83,12 +88,26 @@ public class Message implements Initializable {
                             }
                         });
                     } catch (IOException | ClassNotFoundException e) {
-                        e.printStackTrace();
+//                        e.printStackTrace();
+                        break;
                     }
                 }
             }
         });
         serverListener.start();
+
+        textMessage.setOnKeyPressed((event) -> {
+            if(event.getCode() == KeyCode.ENTER) {
+                event.consume(); // otherwise a new line will be added to the textArea after the sendFunction() call
+                if (event.isShiftDown()) {
+                    textMessage.appendText(System.getProperty("line.separator"));
+                } else {
+                    String text = textMessage.getText();
+                    System.out.println(text);
+                    textMessage.setText("");
+                }
+            }
+        });
     }
 
     @FXML
@@ -104,8 +123,14 @@ public class Message implements Initializable {
 //        Platform.exit();
 
 //        TODO: Switch back to login scene
-        StageView.setSize(444, 600);
-        StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Login.fxml")));
+        try {
+            ServerHandler.init();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("../View/Login.fxml"));
+        StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 444));
     }
 
     public void refreshUserList(ArrayList<User> lst) {

@@ -4,6 +4,7 @@ import Connection.ServerHandler;
 import Model.StageView;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -32,8 +33,15 @@ public class Main extends Application {
         primaryStage.setTitle("FX Chat");
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
+        primaryStage.sizeToScene();
 
         new StageView(primaryStage);
+
+        primaryStage.setOnCloseRequest( event ->
+        {
+            Platform.exit();
+            System.exit(0);
+        });
 
         primaryStage.show();
     }
