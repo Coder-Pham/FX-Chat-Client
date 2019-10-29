@@ -7,6 +7,7 @@ import Connection.Signal;
 
 import Model.StageView;
 import Model.User;
+import Model.UserOnlineList;
 import com.jfoenix.controls.JFXButton;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -37,9 +38,23 @@ public class Message implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+//        TODO: Setup user information
         userNickName.setText(Login.currentUser.getNickname());
-//        TODO: Add 1 more controller
-        refreshController.setController(this);
+//        TODO: Request UOL
+        Signal UOLRequest = new Signal(Action.UOL, true, new User(-1, "", "", ""), "");
+        try {
+            ServerHandler.getObjectOutputStream().writeObject(UOLRequest);
+            ServerHandler.getObjectOutputStream().flush();
+
+            Signal response = (Signal) ServerHandler.getObjectInputStream().readObject();
+            if (response.getAction().equals(Action.UOL) && response.isStatus()) {
+                UserOnlineList userOnlineList = (UserOnlineList) response.getData();
+                this.refreshUserList(userOnlineList.getUsers());
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
 //        TODO: Start subThread for Listener
         this.serverListener = new Thread(new Listener());
         this.serverListener.start();

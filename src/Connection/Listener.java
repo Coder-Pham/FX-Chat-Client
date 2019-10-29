@@ -1,11 +1,9 @@
 package Connection;
 
-import Controller.Message;
 import Controller.RefreshController;
-import Model.User;
+import Model.UserOnlineList;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class Listener implements Runnable {
     @Override
@@ -17,9 +15,9 @@ public class Listener implements Runnable {
 
                 switch (response.getAction()) {
                     case UOL:
-                        ArrayList<User> UserOnlineList = (ArrayList<User>) response.getData();
+                        UserOnlineList userOnlineList = (UserOnlineList) response.getData();
 
-                        RefreshController.refreshUOL(UserOnlineList);
+                        RefreshController.refreshUOL(userOnlineList.getUsers());
                         break;
                     case MESSAGE:
                         break;

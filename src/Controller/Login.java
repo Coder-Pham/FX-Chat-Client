@@ -13,6 +13,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 
 import java.io.IOException;
@@ -63,8 +64,9 @@ public class Login implements Initializable {
             currentUser = (User) response.getData();
             System.out.println("Login Successful");
 
-            StageView.setSize(844, 1000);
-            StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Message.fxml")));
+            FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("../View/Message.fxml"));
+            RefreshController.setController(messageLoader.getController());
+            StageView.getStage().setScene(new Scene(messageLoader.load(), 1000, 844));
         }
 //      TODO: If failed, reset scene
         else if (response.getAction().equals(Action.LOGIN)) {

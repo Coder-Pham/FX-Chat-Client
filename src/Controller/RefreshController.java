@@ -11,7 +11,7 @@ public final class RefreshController {
         controller.refreshUserList(UOL);
     }
 
-    void setController(Message controller) {
+    public static void setController(Message controller) {
         RefreshController.controller = controller;
     }
 }
