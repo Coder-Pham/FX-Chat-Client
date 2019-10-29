@@ -41,4 +41,14 @@ public final class ServerHandler {
     public static void setObjectInputStream(ObjectInputStream objectInputStream) {
         ServerHandler.objectInputStream = objectInputStream;
     }
+
+    public static void close() throws IOException {
+        if (objectInputStream != null)
+            objectInputStream.close();
+
+        if (objectOutputStream != null)
+            objectOutputStream.close();
+
+        socket.close();
+    }
 }

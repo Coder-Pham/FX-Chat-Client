@@ -33,7 +33,8 @@ public class Message implements Initializable {
     private Label userNickName;
     @FXML
     private Label friendNickName;
-    private RefreshController refreshController;
+
+    private Listener listener;
     private Thread serverListener;
 
     @Override
@@ -56,7 +57,8 @@ public class Message implements Initializable {
         }
 
 //        TODO: Start subThread for Listener
-        this.serverListener = new Thread(new Listener());
+        this.listener = new Listener();
+        this.serverListener = new Thread(listener);
         this.serverListener.start();
     }
 
@@ -68,7 +70,7 @@ public class Message implements Initializable {
         ServerHandler.getObjectOutputStream().flush();
 
 //        TODO: Force stop Listener thread
-        this.serverListener.interrupt();
+        this.listener.stop();
 
 //        TODO: Switch back to login scene
         StageView.setSize(444, 600);
