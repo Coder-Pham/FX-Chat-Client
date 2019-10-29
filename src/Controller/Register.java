@@ -91,7 +91,7 @@ public class Register implements Initializable {
             System.out.println("Register Successful");
 
             FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("../View/Message.fxml"));
-            RefreshController.setController(messageLoader.getController());
+//            RefreshController.setController(messageLoader.getController());
             StageView.getStage().setScene(new Scene(messageLoader.load(), 1000, 844));
         }
 //      TODO: If failed, THROW ERROR MESSAGE FROM SERVER
