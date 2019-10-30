@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import com.jfoenix.controls.JFXButton?>
 <?import com.jfoenix.controls.JFXTextArea?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
@@ -12,9 +13,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0"
-      prefWidth="1000.0" stylesheets="@../Resources/Styles/global.css" xmlns="http://javafx.com/javafx/8.0.171"
-      xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.Message">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="1000.0" stylesheets="@../Resources/Styles/global.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.Message">
     <children>
         <MenuBar VBox.vgrow="NEVER">
             <menus>
@@ -72,9 +71,7 @@
                                 </HBox>
                             </children>
                         </HBox>
-                        <ScrollPane fx:id="messageScrollArea" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER"
-                                    pannable="true" prefHeight="693.0" prefWidth="226.0"
-                                    style="-fx-box-border: transparent;" VBox.vgrow="NEVER">
+                        <ScrollPane fx:id="messageScrollArea" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" prefHeight="693.0" prefWidth="226.0" style="-fx-box-border: transparent;" VBox.vgrow="NEVER">
                      <content>
                               <VBox fx:id="messageContainter" minHeight="-Infinity" minWidth="-Infinity" prefWidth="450.0" style="-fx-background-color: white;" />
                      </content>
@@ -86,16 +83,15 @@
                                         <Insets bottom="5.0" left="20.0" />
                                     </HBox.margin>
                                 </JFXTextArea>
-                                <ImageView fitHeight="39.0" fitWidth="56.0" pickOnBounds="true" preserveRatio="true">
-                                    <image>
-                                        <Image url="@../Resources/Images/ImageIcon.png" />
-                                    </image>
-                                </ImageView>
-                                <ImageView fitHeight="39.0" fitWidth="39.0" pickOnBounds="true" preserveRatio="true">
-                                    <image>
-                                        <Image url="@../Resources/Images/FileIcon.png" />
-                                    </image>
-                                </ImageView>
+                        <JFXButton fx:id="fileIcon" ellipsisString="">
+                           <graphic>
+                                      <ImageView fitHeight="39.0" fitWidth="39.0" pickOnBounds="true" preserveRatio="true">
+                                          <image>
+                                              <Image url="@../Resources/Images/FileIcon.png" />
+                                          </image>
+                                      </ImageView>
+                           </graphic>
+                        </JFXButton>
                             </children>
                         </HBox>
                     </children>
