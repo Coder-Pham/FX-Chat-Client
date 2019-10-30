@@ -105,11 +105,12 @@ public class Message implements Initializable {
                                 switch (response.getAction()) {
                                     case UOL:
                                         UserOnlineList userOnlineList = (UserOnlineList) response.getData();
-
+                                        System.out.println(userOnlineList);
                                         refreshUserList(filterUser(userOnlineList.getUsers()));
                                         break;
                                     case MESSAGE:
                                         MessageModel message = (MessageModel) response.getData();
+                                        System.out.println(message.getContent());
 //                                        TODO: Check for history to read - write
                                         if (!checkHistory(message.getSender())) {
                                             try {
@@ -152,6 +153,8 @@ public class Message implements Initializable {
                     textMessage.appendText(System.getProperty("line.separator"));
                 } else {
                     String text = textMessage.getText();
+                    if (text == null)
+                        text = "\n";
                     System.out.println("Message sent: " + text);
 
 //                    TODO: Send message to Server - Write down CSV
@@ -160,6 +163,7 @@ public class Message implements Initializable {
                     Signal request = new Signal(Action.MESSAGE, true, messageModel, "");
                     try {
                         appendHistoryMessage(messageModel);
+                        refreshMessage(messageModel);
                         ServerHandler.getObjectOutputStream().writeObject(request);
                         ServerHandler.getObjectOutputStream().flush();
                     } catch (IOException e) {
@@ -290,7 +294,7 @@ public class Message implements Initializable {
     }
 
     private void appendHistoryMessage(MessageModel msg) throws IOException {
-        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getSender().getId());
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getReceiver().getId());
         ICsvListWriter listWriter = null;
         try {
             listWriter = new CsvListWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
@@ -298,10 +302,8 @@ public class Message implements Initializable {
             final CellProcessor[] processors = getProcessors();
             final String[] header = new String[]{"User", "Message"};
 
-            // TODO: write the header
-            listWriter.writeHeader(header);
 //            TODO: write message
-            listWriter.write(Arrays.asList(msg.getSender().getUsername(), msg.getContent()), processors);
+            listWriter.write(Arrays.asList(msg.getSender().getUsername(), "\'" + msg.getContent() + "\'"), processors);
         } finally {
             if (listWriter != null) {
                 listWriter.close();
