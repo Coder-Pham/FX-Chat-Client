@@ -1,6 +1,9 @@
 package App;
 
+import Connection.Action;
 import Connection.ServerHandler;
+import Connection.Signal;
+import Controller.Login;
 import Model.StageView;
 
 import javafx.application.Application;
@@ -39,6 +42,14 @@ public class Main extends Application {
 
         primaryStage.setOnCloseRequest( event ->
         {
+            Signal request = new Signal(Action.LOGOUT, true, Login.currentUser, "");
+            try {
+                ServerHandler.getObjectOutputStream().writeObject(request);
+                ServerHandler.getObjectOutputStream().flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             Platform.exit();
             System.exit(0);
         });

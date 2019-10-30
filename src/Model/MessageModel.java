@@ -1,11 +1,11 @@
 package Model;
 
-public class Message extends Model {
+public class MessageModel extends Model {
     private User sender;
     private User receiver;
     private String content;
 
-    public Message(User sender, User receiver, String content) {
+    public MessageModel(User sender, User receiver, String content) {
         this.sender = sender;
         this.receiver = receiver;
         this.content = content;

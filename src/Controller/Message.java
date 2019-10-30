@@ -4,6 +4,7 @@ import Connection.Action;
 import Connection.ServerHandler;
 import Connection.Signal;
 
+import Model.MessageModel;
 import Model.StageView;
 import Model.User;
 import Model.UserOnlineList;
@@ -11,6 +12,8 @@ import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextArea;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -21,14 +24,21 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.supercsv.cellprocessor.constraint.NotNull;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.CsvListReader;
+import org.supercsv.io.ICsvListReader;
+import org.supercsv.prefs.CsvPreference;
 
 public class Message implements Initializable {
     @FXML
@@ -39,13 +49,28 @@ public class Message implements Initializable {
     private Label friendNickName;
     @FXML
     private JFXTextArea textMessage;
+    @FXML
+    private VBox messageContainter;
+    @FXML
+    private HBox chatArea;
 
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
+    private static CellProcessor[] getProcessors() {
+
+        final CellProcessor[] processors = new CellProcessor[] {
+                new NotNull(), // Nickname
+                new NotNull(), // Message
+        };
+
+        return processors;
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
 //        TODO: Setup user information
+        chatArea.setDisable(true);
         userNickName.setText(Login.currentUser.getNickname());
 //        TODO: Request UOL
         Signal UOLRequest = new Signal(Action.UOL, true, new User(-1, "", "", ""), "");
@@ -56,7 +81,7 @@ public class Message implements Initializable {
             Signal response = (Signal) ServerHandler.getObjectInputStream().readObject();
             if (response.getAction().equals(Action.UOL) && response.isStatus()) {
                 UserOnlineList userOnlineList = (UserOnlineList) response.getData();
-                this.refreshUserList(userOnlineList.getUsers());
+                this.refreshUserList(filterUser(userOnlineList.getUsers()));
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -79,6 +104,8 @@ public class Message implements Initializable {
                                         refreshUserList(filterUser(userOnlineList.getUsers()));
                                         break;
                                     case MESSAGE:
+                                        MessageModel message = (MessageModel) response.getData();
+
                                         break;
                                     default:
                                         break;
@@ -106,6 +133,13 @@ public class Message implements Initializable {
                 }
             }
         });
+
+//        try {
+//            this.loadHistoryMessage(Login.currentUser);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+
     }
 
     @FXML
@@ -131,11 +165,14 @@ public class Message implements Initializable {
     }
 
     private ArrayList<User> filterUser(ArrayList<User> UOLList) {
-        for (int i = 0; i < UOLList.size(); i++)
-            if (UOLList.get(i).getUsername().equals(Login.currentUser.getUsername())) {
+        System.out.println(UOLList);
+        int i = 0;
+        while (i < UOLList.size())
+            if (UOLList.get(i).getId() == Login.currentUser.getId()) {
                 UOLList.remove(i);
-                break;
             }
+            else
+                i++;
         return UOLList;
     }
 
@@ -150,10 +187,76 @@ public class Message implements Initializable {
             showIcon.setFitHeight(10);
             showIcon.setFitWidth(10);
             JFXButton user = new JFXButton(lst.get(i).getNickname(), showIcon);
+            int finalI = i;
+            user.setOnAction(e -> connectFriend(lst.get(finalI)));
             user.setContentDisplay(ContentDisplay.RIGHT);
             user.setMinWidth(this.dynamicUserOnlineList.getPrefWidth());
             user.setAlignment(Pos.BASELINE_RIGHT);
             this.dynamicUserOnlineList.getChildren().add(i, user);
         }
     }
+
+    private void connectFriend(User user){
+        friendNickName.setText(user.getNickname());
+        System.out.println(user);
+    }
+
+    private void refreshMessage(MessageModel msg) {
+//        TODO: Write message
+        JFXButton container = new JFXButton(msg.getContent());
+        container.setContentDisplay(ContentDisplay.CENTER);
+        if (Login.currentUser.getNickname() == msg.getSender().getNickname()){
+            container.setStyle("-fx-background-color: #4298FB;");
+            container.setAlignment(Pos.BASELINE_LEFT);
+        }
+        else{
+            container.setStyle("-fx-background-color: #F1EFF0;");
+            container.setAlignment(Pos.BASELINE_RIGHT);
+        }
+        this.messageContainter.getChildren().add(container);
+    }
+
+    private void appendSenderToCSV(MessageModel msg) throws IOException {
+
+    }
+
+    @SuppressWarnings("resource")
+    @Deprecated
+    private void loadHistoryMessage(User friend) throws IOException {
+        String SAMPLE_CSV_FILE_PATH = "1-2-message.csv";
+        ICsvListReader listReader = null;
+        try {
+            listReader = new CsvListReader(new FileReader("./out/production/FXChat-Client/Resources/History/" + SAMPLE_CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
+
+            listReader.getHeader(true);
+            final CellProcessor[] processors = getProcessors();
+
+            List<Object> messageList;
+            while ((messageList = listReader.read(processors)) != null){
+                JFXButton container = new JFXButton(messageList.get(1).toString());
+                container.setContentDisplay(ContentDisplay.CENTER);
+                container.setAlignment(Pos.BASELINE_CENTER);
+                HBox containMessageButton = new HBox();
+                containMessageButton.setMinWidth(this.messageContainter.getPrefWidth());
+                if (Login.currentUser.getNickname().equals(messageList.get(0).toString())){
+                    container.setStyle("-fx-background-color: #4298FB; -fx-text-fill: white; -fx-max-width : 240px");
+                    container.setWrapText(true);
+                    containMessageButton.getChildren().add(container);
+                    containMessageButton.setAlignment(Pos.BASELINE_LEFT);
+                }
+                else{
+                    container.setStyle("-fx-background-color: #F1EFF0; -fx-text-fill: black; -fx-max-width : 240px");
+                    container.setWrapText(true);
+                    containMessageButton.getChildren().add(container);
+                    containMessageButton.setAlignment(Pos.BASELINE_RIGHT);
+                }
+                this.messageContainter.getChildren().add(containMessageButton);
+            }
+        } finally {
+            if (listReader != null){
+                listReader.close();
+            }
+        }
+    }
+
 }
