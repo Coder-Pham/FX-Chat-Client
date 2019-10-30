@@ -131,8 +131,10 @@ public class Message implements Initializable {
                                             if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
                                                 appendHistoryMessage(message);
                                                 refreshMessage(message);
-                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername()))
+                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername())) {
                                                 appendHistoryMessage(message);
+                                                notification(message.getSender());
+                                            }
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                         }
@@ -203,6 +205,28 @@ public class Message implements Initializable {
 
         FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("../View/Login.fxml"));
         StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 444));
+    }
+
+    private void notification(User sender) {
+        for (int i = 0; i < dynamicUserOnlineList.getChildren().size(); i++) {
+            JFXButton friend = (JFXButton) dynamicUserOnlineList.getChildren().get(i);
+            if (friend.getText().equals(sender.getUsername())) {
+                friend.setStyle("-fx-background-color: #8186d5; ");
+                dynamicUserOnlineList.getChildren().add(i, friend);
+                break;
+            }
+        }
+    }
+
+    private void clearNotification() {
+        for (int i = 0; i < dynamicUserOnlineList.getChildren().size(); i++) {
+            JFXButton friend = (JFXButton) dynamicUserOnlineList.getChildren().get(i);
+            if (friend.getText().equals(currentFriend.getUsername())) {
+                friend.setStyle("-fx-background-color: #FFFFFF; ");
+                dynamicUserOnlineList.getChildren().add(i, friend);
+                break;
+            }
+        }
     }
 
     private void closeStream(InputStream inputStream) {
@@ -329,7 +353,7 @@ public class Message implements Initializable {
             ImageView showIcon = new ImageView(image);
             showIcon.setFitHeight(10);
             showIcon.setFitWidth(10);
-            JFXButton user = new JFXButton(lst.get(i).getNickname(), showIcon);
+            JFXButton user = new JFXButton(lst.get(i).getUsername(), showIcon);
 
             int userID = i;
             user.setOnAction(e -> {
@@ -357,6 +381,7 @@ public class Message implements Initializable {
         friendNickName.setText(user.getNickname());
         this.currentFriend = user;
         messageContainer.getChildren().clear();
+        clearNotification();
 
         if (checkHistory(this.currentFriend))
             loadHistoryMessage();
