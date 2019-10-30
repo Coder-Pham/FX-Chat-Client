@@ -5,5 +5,6 @@ public enum Action {
     REGISTER,
     LOGOUT,
     UOL,
-    MESSAGE
+    MESSAGE,
+    FILE
 }

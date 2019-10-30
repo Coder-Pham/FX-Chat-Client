@@ -4,9 +4,7 @@ import Connection.Action;
 import Connection.ServerHandler;
 import Connection.Signal;
 
-import Model.StageView;
-import Model.User;
-import Model.UserOnlineList;
+import Model.*;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextArea;
 import javafx.application.Platform;
@@ -14,21 +12,36 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.awt.*;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javafx.stage.FileChooser;
+import org.supercsv.cellprocessor.constraint.NotNull;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.CsvListReader;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.io.ICsvListReader;
+import org.supercsv.io.ICsvListWriter;
+import org.supercsv.prefs.CsvPreference;
 
 public class Message implements Initializable {
     @FXML
@@ -39,13 +52,35 @@ public class Message implements Initializable {
     private Label friendNickName;
     @FXML
     private JFXTextArea textMessage;
+    @FXML
+    private VBox messageContainer;
+    @FXML
+    private HBox chatArea;
+    @FXML
+    private ScrollPane messageScrollArea;
+    @FXML
+    private JFXButton fileIcon;
+
+    private Desktop desktop = Desktop.getDesktop();
 
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
+    private User currentFriend = null;
+
+    private static CellProcessor[] getProcessors() {
+
+        final CellProcessor[] processors = new CellProcessor[] {
+                new NotNull(), // Nickname
+                new NotNull(), // Message
+        };
+
+        return processors;
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
 //        TODO: Setup user information
+        chatArea.setDisable(true);
         userNickName.setText(Login.currentUser.getNickname());
 //        TODO: Request UOL
         Signal UOLRequest = new Signal(Action.UOL, true, new User(-1, "", "", ""), "");
@@ -56,7 +91,7 @@ public class Message implements Initializable {
             Signal response = (Signal) ServerHandler.getObjectInputStream().readObject();
             if (response.getAction().equals(Action.UOL) && response.isStatus()) {
                 UserOnlineList userOnlineList = (UserOnlineList) response.getData();
-                this.refreshUserList(userOnlineList.getUsers());
+                this.refreshUserList(filterUser(userOnlineList.getUsers()));
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -75,12 +110,35 @@ public class Message implements Initializable {
                                 switch (response.getAction()) {
                                     case UOL:
                                         UserOnlineList userOnlineList = (UserOnlineList) response.getData();
-                                        for (int i = 0; i < userOnlineList.getUsers().size(); i++)
-                                            System.out.println(userOnlineList.getUsers().get(i).getNickname());
 
-                                        refreshUserList(userOnlineList.getUsers());
+                                        System.out.println(userOnlineList.toString());
+
+                                        refreshUserList(filterUser(userOnlineList.getUsers()));
                                         break;
                                     case MESSAGE:
+                                        MessageModel message = (MessageModel) response.getData();
+
+//                                        TODO: Check for history to read - write
+                                        if (!checkHistory(message.getSender())) {
+                                            try {
+                                                createHistoryMessage(message.getSender());
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+
+                                        try {
+                                            if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
+                                                appendHistoryMessage(message);
+                                                refreshMessage(message);
+                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername()))
+                                                appendHistoryMessage(message);
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                        break;
+                                    case FILE:
+                                        downFile((FileInfo) response.getData());
                                         break;
                                     default:
                                         break;
@@ -103,7 +161,22 @@ public class Message implements Initializable {
                     textMessage.appendText(System.getProperty("line.separator"));
                 } else {
                     String text = textMessage.getText();
-                    System.out.println(text);
+                    if (text == null)
+                        text = "\n";
+                    System.out.println("Message sent: " + text);
+
+//                    TODO: Send message to Server - Write down CSV
+//                    NOTE: When click to friend, already check to CSV
+                    MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, text);
+                    Signal request = new Signal(Action.MESSAGE, true, messageModel, "");
+                    try {
+                        appendHistoryMessage(messageModel);
+                        refreshMessage(messageModel);
+                        ServerHandler.getObjectOutputStream().writeObject(request);
+                        ServerHandler.getObjectOutputStream().flush();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     textMessage.setText("");
                 }
             }
@@ -120,7 +193,6 @@ public class Message implements Initializable {
 //        TODO: Force stop Listener thread
         serverListener.interrupt();
         shuttingDown.set(true);
-//        Platform.exit();
 
 //        TODO: Switch back to login scene
         try {
@@ -133,7 +205,121 @@ public class Message implements Initializable {
         StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 444));
     }
 
-    public void refreshUserList(ArrayList<User> lst) {
+    private void closeStream(InputStream inputStream) {
+        try {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void closeStream(OutputStream outputStream) {
+        try {
+            if (outputStream != null) {
+                outputStream.close();
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @FXML
+    public void upFile(MouseEvent actionEvent) {
+        final FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Files");
+        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("All Files", "*.*"));
+
+        File file = fileChooser.showOpenDialog(StageView.getStage());
+        if (file != null) {
+            List<File> files = Arrays.asList(file);
+
+//            TODO: From files.get(i).getAbsolutePath() -> Convert to byte -> Send FileInfo
+            for (File fileSend : files) {
+                BufferedInputStream bufferedInputStream = null;
+                FileInfo fileInfo = null;
+                try {
+                    bufferedInputStream = new BufferedInputStream(new FileInputStream(fileSend));
+                    fileInfo = new FileInfo(Login.currentUser, currentFriend, "", 0, new byte[]{});
+
+//                TODO: Get File info
+                    byte[] fileBytes = new byte[(int) fileSend.length()];
+                    bufferedInputStream.read(fileBytes, 0, fileBytes.length);
+                    fileInfo.setFilename(fileSend.getName());
+                    fileInfo.setDataBytes(fileBytes);
+                    fileInfo.setFileSize(fileSend.length());
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                } finally {
+                    closeStream(bufferedInputStream);
+                }
+
+//                TODO: Add FileInfo 2-end users
+                assert fileInfo != null;
+                fileInfo.setSender(Login.currentUser);
+                fileInfo.setReceiver(currentFriend);
+                Signal request = new Signal(Action.FILE, true, fileInfo, "");
+                try {
+                    ServerHandler.getObjectOutputStream().writeObject(request);
+                    ServerHandler.getObjectOutputStream().flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+//                TODO: Alert file sent
+                MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, "INCOMING FILE: " + fileSend.getName());
+                request = new Signal(Action.MESSAGE, true, messageModel, "");
+                try {
+                    appendHistoryMessage(messageModel);
+                    refreshMessage(messageModel);
+                    ServerHandler.getObjectOutputStream().writeObject(request);
+                    ServerHandler.getObjectOutputStream().flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private boolean downFile(FileInfo fileInfo) {
+        BufferedOutputStream bufferedOutputStream = null;
+
+//        TODO: Check Download folder exist
+        File directory = new File("./Download");
+        if (!directory.exists())
+            directory.mkdir();
+
+//        TODO: Download file
+        try {
+            if (fileInfo != null) {
+                File fileReceive = new File("./Download/".concat(fileInfo.getFilename()));
+                bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileReceive));
+                bufferedOutputStream.write(fileInfo.getDataBytes());
+                bufferedOutputStream.flush();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            closeStream(bufferedOutputStream);
+        }
+        return true;
+    }
+
+    private ArrayList<User> filterUser(ArrayList<User> UOLList) {
+        System.out.println(UOLList);
+        int i = 0;
+        while (i < UOLList.size())
+            if (UOLList.get(i).getId() == Login.currentUser.getId()) {
+                UOLList.remove(i);
+            }
+            else
+                i++;
+        return UOLList;
+    }
+
+    private void refreshUserList(ArrayList<User> lst) {
 //        TODO: Refresh online users list
         InputStream inputIcon = getClass().getResourceAsStream("../Resources/Images/Online.png");
         Image image = new Image(inputIcon);
@@ -144,10 +330,129 @@ public class Message implements Initializable {
             showIcon.setFitHeight(10);
             showIcon.setFitWidth(10);
             JFXButton user = new JFXButton(lst.get(i).getNickname(), showIcon);
+
+            int userID = i;
+            user.setOnAction(e -> {
+                try {
+                    connectFriend(lst.get(userID));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
             user.setContentDisplay(ContentDisplay.RIGHT);
             user.setMinWidth(this.dynamicUserOnlineList.getPrefWidth());
             user.setAlignment(Pos.BASELINE_RIGHT);
             this.dynamicUserOnlineList.getChildren().add(i, user);
         }
     }
+
+    private boolean checkHistory(User user) {
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
+        File history = new File("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH);
+        return history.exists();
+    }
+
+    private void connectFriend(User user) throws IOException {
+        chatArea.setDisable(false);
+        friendNickName.setText(user.getNickname());
+        this.currentFriend = user;
+        messageContainer.getChildren().clear();
+
+        if (checkHistory(this.currentFriend))
+            loadHistoryMessage();
+        else
+            createHistoryMessage(this.currentFriend);
+    }
+
+    private void createHistoryMessage(User user) throws IOException {
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
+        ICsvListWriter listWriter = null;
+        try {
+            listWriter = new CsvListWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
+
+            final CellProcessor[] processors = getProcessors();
+            final String[] header = new String[]{"User", "Message"};
+
+            // TODO: write the header
+            listWriter.writeHeader(header);
+        } finally {
+            if (listWriter != null) {
+                listWriter.close();
+            }
+        }
+    }
+
+    private void refreshMessage(MessageModel msg) {
+//        TODO: Push message to scene
+        JFXButton container = new JFXButton(msg.getContent());
+        container.setContentDisplay(ContentDisplay.CENTER);
+        container.setAlignment(Pos.BASELINE_CENTER);
+        HBox containMessageButton = new HBox();
+        containMessageButton.setMinWidth(this.messageContainer.getPrefWidth());
+        if (Login.currentUser.getUsername().equals(msg.getSender().getUsername())) {
+            container.setStyle("-fx-background-color: #4298FB; -fx-text-fill: white; -fx-max-width : 240px");
+            container.setWrapText(true);
+            containMessageButton.getChildren().add(container);
+            containMessageButton.setAlignment(Pos.BASELINE_LEFT);
+            HBox.setMargin(container, new Insets(0, 0, 5, 3));
+        } else {
+            container.setStyle("-fx-background-color: #F1EFF0; -fx-text-fill: black; -fx-max-width : 240px");
+            container.setWrapText(true);
+            containMessageButton.getChildren().add(container);
+            containMessageButton.setAlignment(Pos.BASELINE_RIGHT);
+            HBox.setMargin(container, new Insets(0, 3, 5, 0));
+        }
+        this.messageContainer.getChildren().add(containMessageButton);
+    }
+
+    private void appendHistoryMessage(MessageModel msg) throws IOException {
+        String CSV_FILE_PATH;
+        if (msg.getSender().getId() == Login.currentUser.getId())
+            CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getReceiver().getId());
+        else
+            CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getSender().getId());
+        ICsvListWriter listWriter = null;
+        try {
+            listWriter = new CsvListWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
+
+            final CellProcessor[] processors = getProcessors();
+            final String[] header = new String[]{"User", "Message"};
+
+//            TODO: write message
+            listWriter.write(Arrays.asList(msg.getSender().getUsername(), msg.getContent()), processors);
+        } finally {
+            if (listWriter != null) {
+                listWriter.close();
+            }
+        }
+    }
+
+    @SuppressWarnings("resource")
+//    @Deprecated
+    private void loadHistoryMessage() throws IOException {
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), this.currentFriend.getId());
+        ICsvListReader listReader = null;
+        try {
+            listReader = new CsvListReader(new FileReader("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
+
+            listReader.getHeader(true);
+            final CellProcessor[] processors = getProcessors();
+
+            List<Object> messageList;
+            while ((messageList = listReader.read(processors)) != null){
+                if (messageList.get(0).equals(Login.currentUser.getUsername())) {
+                    MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, messageList.get(1).toString());
+                    refreshMessage(messageModel);
+                } else if (messageList.get(0).equals(this.currentFriend.getUsername())) {
+                    MessageModel messageModel = new MessageModel(this.currentFriend, Login.currentUser, messageList.get(1).toString());
+                    refreshMessage(messageModel);
+                }
+            }
+        } finally {
+            if (listReader != null){
+                listReader.close();
+            }
+        }
+    }
+
 }
