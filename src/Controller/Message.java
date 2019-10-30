@@ -239,6 +239,7 @@ public class Message implements Initializable {
     }
 
     private void connectFriend(User user) throws IOException {
+        chatArea.setDisable(false);
         friendNickName.setText(user.getNickname());
         this.currentFriend = user;
         messageContainter.getChildren().clear();
