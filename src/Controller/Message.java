@@ -10,6 +10,7 @@ import Model.User;
 import Model.UserOnlineList;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextArea;
+import com.sun.security.ntlm.Server;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -30,6 +31,7 @@ import javafx.scene.layout.VBox;
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,7 +39,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.supercsv.cellprocessor.constraint.NotNull;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvListReader;
+import org.supercsv.io.CsvListWriter;
 import org.supercsv.io.ICsvListReader;
+import org.supercsv.io.ICsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
 public class Message implements Initializable {
@@ -56,6 +60,7 @@ public class Message implements Initializable {
 
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
+    private User currentFriend = null;
 
     private static CellProcessor[] getProcessors() {
 
@@ -105,7 +110,26 @@ public class Message implements Initializable {
                                         break;
                                     case MESSAGE:
                                         MessageModel message = (MessageModel) response.getData();
+//                                        TODO: Check for history to read - write
+                                        if (!checkHistory(message.getSender())) {
+                                            try {
+                                                createHistoryMessage(message.getSender());
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
 
+                                        try {
+                                            if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
+                                                appendHistoryMessage(message);
+                                                refreshMessage(message);
+                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername()))
+                                                appendHistoryMessage(message);
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                        break;
+                                    case FILE:
                                         break;
                                     default:
                                         break;
@@ -128,18 +152,23 @@ public class Message implements Initializable {
                     textMessage.appendText(System.getProperty("line.separator"));
                 } else {
                     String text = textMessage.getText();
-                    System.out.println(text);
+                    System.out.println("Message sent: " + text);
+
+//                    TODO: Send message to Server - Write down CSV
+//                    NOTE: When click to friend, already check to CSV
+                    MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, text);
+                    Signal request = new Signal(Action.MESSAGE, true, messageModel, "");
+                    try {
+                        appendHistoryMessage(messageModel);
+                        ServerHandler.getObjectOutputStream().writeObject(request);
+                        ServerHandler.getObjectOutputStream().flush();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     textMessage.setText("");
                 }
             }
         });
-
-//        try {
-//            this.loadHistoryMessage(Login.currentUser);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-
     }
 
     @FXML
@@ -187,8 +216,15 @@ public class Message implements Initializable {
             showIcon.setFitHeight(10);
             showIcon.setFitWidth(10);
             JFXButton user = new JFXButton(lst.get(i).getNickname(), showIcon);
-            int finalI = i;
-            user.setOnAction(e -> connectFriend(lst.get(finalI)));
+
+            int userID = i;
+            user.setOnAction(e -> {
+                try {
+                    connectFriend(lst.get(userID));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
             user.setContentDisplay(ContentDisplay.RIGHT);
             user.setMinWidth(this.dynamicUserOnlineList.getPrefWidth());
             user.setAlignment(Pos.BASELINE_RIGHT);
@@ -196,61 +232,102 @@ public class Message implements Initializable {
         }
     }
 
-    private void connectFriend(User user){
+    private boolean checkHistory(User user) {
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
+        File history = new File("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH);
+        return history.exists();
+    }
+
+    private void connectFriend(User user) throws IOException {
         friendNickName.setText(user.getNickname());
-        System.out.println(user);
+        this.currentFriend = user;
+        messageContainter.getChildren().clear();
+
+        if (checkHistory(this.currentFriend))
+            loadHistoryMessage();
+        else
+            createHistoryMessage(this.currentFriend);
+    }
+
+    private void createHistoryMessage(User user) throws IOException {
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
+        ICsvListWriter listWriter = null;
+        try {
+            listWriter = new CsvListWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
+
+            final CellProcessor[] processors = getProcessors();
+            final String[] header = new String[]{"User", "Message"};
+
+            // TODO: write the header
+            listWriter.writeHeader(header);
+        } finally {
+            if (listWriter != null) {
+                listWriter.close();
+            }
+        }
     }
 
     private void refreshMessage(MessageModel msg) {
-//        TODO: Write message
+//        TODO: Push message to scene
         JFXButton container = new JFXButton(msg.getContent());
         container.setContentDisplay(ContentDisplay.CENTER);
-        if (Login.currentUser.getNickname() == msg.getSender().getNickname()){
-            container.setStyle("-fx-background-color: #4298FB;");
-            container.setAlignment(Pos.BASELINE_LEFT);
+        container.setAlignment(Pos.BASELINE_CENTER);
+        HBox containMessageButton = new HBox();
+        containMessageButton.setMinWidth(this.messageContainter.getPrefWidth());
+        if (Login.currentUser.getUsername().equals(msg.getSender().getUsername())) {
+            container.setStyle("-fx-background-color: #4298FB; -fx-text-fill: white; -fx-max-width : 240px");
+            container.setWrapText(true);
+            containMessageButton.getChildren().add(container);
+            containMessageButton.setAlignment(Pos.BASELINE_LEFT);
+        } else {
+            container.setStyle("-fx-background-color: #F1EFF0; -fx-text-fill: black; -fx-max-width : 240px");
+            container.setWrapText(true);
+            containMessageButton.getChildren().add(container);
+            containMessageButton.setAlignment(Pos.BASELINE_RIGHT);
         }
-        else{
-            container.setStyle("-fx-background-color: #F1EFF0;");
-            container.setAlignment(Pos.BASELINE_RIGHT);
-        }
-        this.messageContainter.getChildren().add(container);
+        this.messageContainter.getChildren().add(containMessageButton);
     }
 
-    private void appendSenderToCSV(MessageModel msg) throws IOException {
+    private void appendHistoryMessage(MessageModel msg) throws IOException {
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getSender().getId());
+        ICsvListWriter listWriter = null;
+        try {
+            listWriter = new CsvListWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
 
+            final CellProcessor[] processors = getProcessors();
+            final String[] header = new String[]{"User", "Message"};
+
+            // TODO: write the header
+            listWriter.writeHeader(header);
+//            TODO: write message
+            listWriter.write(Arrays.asList(msg.getSender().getUsername(), msg.getContent()), processors);
+        } finally {
+            if (listWriter != null) {
+                listWriter.close();
+            }
+        }
     }
 
     @SuppressWarnings("resource")
-    @Deprecated
-    private void loadHistoryMessage(User friend) throws IOException {
-        String SAMPLE_CSV_FILE_PATH = "1-2-message.csv";
+//    @Deprecated
+    private void loadHistoryMessage() throws IOException {
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), this.currentFriend.getId());
         ICsvListReader listReader = null;
         try {
-            listReader = new CsvListReader(new FileReader("./out/production/FXChat-Client/Resources/History/" + SAMPLE_CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
+            listReader = new CsvListReader(new FileReader("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
 
             listReader.getHeader(true);
             final CellProcessor[] processors = getProcessors();
 
             List<Object> messageList;
             while ((messageList = listReader.read(processors)) != null){
-                JFXButton container = new JFXButton(messageList.get(1).toString());
-                container.setContentDisplay(ContentDisplay.CENTER);
-                container.setAlignment(Pos.BASELINE_CENTER);
-                HBox containMessageButton = new HBox();
-                containMessageButton.setMinWidth(this.messageContainter.getPrefWidth());
-                if (Login.currentUser.getNickname().equals(messageList.get(0).toString())){
-                    container.setStyle("-fx-background-color: #4298FB; -fx-text-fill: white; -fx-max-width : 240px");
-                    container.setWrapText(true);
-                    containMessageButton.getChildren().add(container);
-                    containMessageButton.setAlignment(Pos.BASELINE_LEFT);
+                if (messageList.get(0).equals(Login.currentUser.getUsername())) {
+                    MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, messageList.get(1).toString());
+                    refreshMessage(messageModel);
+                } else if (messageList.get(0).equals(this.currentFriend.getUsername())) {
+                    MessageModel messageModel = new MessageModel(this.currentFriend, Login.currentUser, messageList.get(1).toString());
+                    refreshMessage(messageModel);
                 }
-                else{
-                    container.setStyle("-fx-background-color: #F1EFF0; -fx-text-fill: black; -fx-max-width : 240px");
-                    container.setWrapText(true);
-                    containMessageButton.getChildren().add(container);
-                    containMessageButton.setAlignment(Pos.BASELINE_RIGHT);
-                }
-                this.messageContainter.getChildren().add(containMessageButton);
             }
         } finally {
             if (listReader != null){
