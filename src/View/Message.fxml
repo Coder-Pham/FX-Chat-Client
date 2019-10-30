@@ -72,7 +72,9 @@
                                 </HBox>
                             </children>
                         </HBox>
-                  <ScrollPane fx:id="userOnlineList1" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" prefHeight="693.0" prefWidth="226.0" style="-fx-box-border: transparent;" VBox.vgrow="NEVER">
+                        <ScrollPane fx:id="messageScrollArea" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER"
+                                    pannable="true" prefHeight="693.0" prefWidth="226.0"
+                                    style="-fx-box-border: transparent;" VBox.vgrow="NEVER">
                      <content>
                               <VBox fx:id="messageContainter" minHeight="-Infinity" minWidth="-Infinity" prefWidth="450.0" style="-fx-background-color: white;" />
                      </content>

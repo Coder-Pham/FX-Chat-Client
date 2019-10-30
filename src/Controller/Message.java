@@ -18,10 +18,12 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -57,6 +59,8 @@ public class Message implements Initializable {
     private VBox messageContainter;
     @FXML
     private HBox chatArea;
+    @FXML
+    private ScrollPane messageScrollArea;
 
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
@@ -105,12 +109,14 @@ public class Message implements Initializable {
                                 switch (response.getAction()) {
                                     case UOL:
                                         UserOnlineList userOnlineList = (UserOnlineList) response.getData();
-                                        System.out.println(userOnlineList);
+
+                                        System.out.println(userOnlineList.toString());
+
                                         refreshUserList(filterUser(userOnlineList.getUsers()));
                                         break;
                                     case MESSAGE:
                                         MessageModel message = (MessageModel) response.getData();
-                                        System.out.println(message.getContent());
+
 //                                        TODO: Check for history to read - write
                                         if (!checkHistory(message.getSender())) {
                                             try {
@@ -284,17 +290,23 @@ public class Message implements Initializable {
             container.setWrapText(true);
             containMessageButton.getChildren().add(container);
             containMessageButton.setAlignment(Pos.BASELINE_LEFT);
+            HBox.setMargin(container, new Insets(0, 0, 5, 3));
         } else {
             container.setStyle("-fx-background-color: #F1EFF0; -fx-text-fill: black; -fx-max-width : 240px");
             container.setWrapText(true);
             containMessageButton.getChildren().add(container);
             containMessageButton.setAlignment(Pos.BASELINE_RIGHT);
+            HBox.setMargin(container, new Insets(0, 3, 5, 0));
         }
         this.messageContainter.getChildren().add(containMessageButton);
     }
 
     private void appendHistoryMessage(MessageModel msg) throws IOException {
-        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getReceiver().getId());
+        String CSV_FILE_PATH;
+        if (msg.getSender().getId() == Login.currentUser.getId())
+            CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getReceiver().getId());
+        else
+            CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getSender().getId());
         ICsvListWriter listWriter = null;
         try {
             listWriter = new CsvListWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
@@ -303,7 +315,7 @@ public class Message implements Initializable {
             final String[] header = new String[]{"User", "Message"};
 
 //            TODO: write message
-            listWriter.write(Arrays.asList(msg.getSender().getUsername(), "\'" + msg.getContent() + "\'"), processors);
+            listWriter.write(Arrays.asList(msg.getSender().getUsername(), msg.getContent()), processors);
         } finally {
             if (listWriter != null) {
                 listWriter.close();
