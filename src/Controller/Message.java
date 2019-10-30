@@ -75,10 +75,8 @@ public class Message implements Initializable {
                                 switch (response.getAction()) {
                                     case UOL:
                                         UserOnlineList userOnlineList = (UserOnlineList) response.getData();
-                                        for (int i = 0; i < userOnlineList.getUsers().size(); i++)
-                                            System.out.println(userOnlineList.getUsers().get(i).getNickname());
 
-                                        refreshUserList(userOnlineList.getUsers());
+                                        refreshUserList(filterUser(userOnlineList.getUsers()));
                                         break;
                                     case MESSAGE:
                                         break;
@@ -120,7 +118,6 @@ public class Message implements Initializable {
 //        TODO: Force stop Listener thread
         serverListener.interrupt();
         shuttingDown.set(true);
-//        Platform.exit();
 
 //        TODO: Switch back to login scene
         try {
@@ -133,7 +130,16 @@ public class Message implements Initializable {
         StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 444));
     }
 
-    public void refreshUserList(ArrayList<User> lst) {
+    private ArrayList<User> filterUser(ArrayList<User> UOLList) {
+        for (int i = 0; i < UOLList.size(); i++)
+            if (UOLList.get(i).getUsername().equals(Login.currentUser.getUsername())) {
+                UOLList.remove(i);
+                break;
+            }
+        return UOLList;
+    }
+
+    private void refreshUserList(ArrayList<User> lst) {
 //        TODO: Refresh online users list
         InputStream inputIcon = getClass().getResourceAsStream("../Resources/Images/Online.png");
         Image image = new Image(inputIcon);

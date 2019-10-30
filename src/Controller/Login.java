@@ -65,7 +65,6 @@ public class Login implements Initializable {
             System.out.println("Login Successful");
 
             FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("../View/Message.fxml"));
-//            RefreshController.setController(messageLoader.getController());
             StageView.getStage().setScene(new Scene(messageLoader.load(), 1000, 844));
         }
 //      TODO: If failed, reset scene
