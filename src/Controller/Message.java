@@ -233,11 +233,6 @@ public class Message implements Initializable {
 
         File file = fileChooser.showOpenDialog(StageView.getStage());
         if (file != null) {
-            try {
-                this.desktop.open(file);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
             List<File> files = Arrays.asList(file);
 
 //            TODO: From files.get(i).getAbsolutePath() -> Convert to byte -> Send FileInfo
@@ -246,7 +241,7 @@ public class Message implements Initializable {
                 FileInfo fileInfo = null;
                 try {
                     bufferedInputStream = new BufferedInputStream(new FileInputStream(fileSend));
-                    fileInfo = new FileInfo();
+                    fileInfo = new FileInfo(Login.currentUser, currentFriend, "", 0, new byte[]{});
 
 //                TODO: Get File info
                     byte[] fileBytes = new byte[(int) fileSend.length()];
@@ -271,6 +266,18 @@ public class Message implements Initializable {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+//                TODO: Alert file sent
+                MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, "INCOMING FILE: " + fileSend.getName());
+                request = new Signal(Action.MESSAGE, true, messageModel, "");
+                try {
+                    appendHistoryMessage(messageModel);
+                    refreshMessage(messageModel);
+                    ServerHandler.getObjectOutputStream().writeObject(request);
+                    ServerHandler.getObjectOutputStream().flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -286,7 +293,7 @@ public class Message implements Initializable {
 //        TODO: Download file
         try {
             if (fileInfo != null) {
-                File fileReceive = new File("./Download".concat(fileInfo.getFilename()));
+                File fileReceive = new File("./Download/".concat(fileInfo.getFilename()));
                 bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileReceive));
                 bufferedOutputStream.write(fileInfo.getDataBytes());
                 bufferedOutputStream.flush();
