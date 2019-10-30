@@ -4,17 +4,11 @@ import Connection.Action;
 import Connection.ServerHandler;
 import Connection.Signal;
 
-import Model.MessageModel;
-import Model.StageView;
-import Model.User;
-import Model.UserOnlineList;
+import Model.*;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextArea;
-import com.sun.security.ntlm.Server;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -27,9 +21,11 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.awt.*;
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
@@ -38,6 +34,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javafx.stage.FileChooser;
 import org.supercsv.cellprocessor.constraint.NotNull;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvListReader;
@@ -56,11 +53,15 @@ public class Message implements Initializable {
     @FXML
     private JFXTextArea textMessage;
     @FXML
-    private VBox messageContainter;
+    private VBox messageContainer;
     @FXML
     private HBox chatArea;
     @FXML
     private ScrollPane messageScrollArea;
+    @FXML
+    private JFXButton fileIcon;
+
+    private Desktop desktop = Desktop.getDesktop();
 
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
@@ -137,6 +138,7 @@ public class Message implements Initializable {
                                         }
                                         break;
                                     case FILE:
+                                        downFile((FileInfo) response.getData());
                                         break;
                                     default:
                                         break;
@@ -203,6 +205,101 @@ public class Message implements Initializable {
         StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 444));
     }
 
+    private void closeStream(InputStream inputStream) {
+        try {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void closeStream(OutputStream outputStream) {
+        try {
+            if (outputStream != null) {
+                outputStream.close();
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @FXML
+    public void upFile(MouseEvent actionEvent) {
+        final FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Files");
+        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("All Files", "*.*"));
+
+        File file = fileChooser.showOpenDialog(StageView.getStage());
+        if (file != null) {
+            try {
+                this.desktop.open(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            List<File> files = Arrays.asList(file);
+
+//            TODO: From files.get(i).getAbsolutePath() -> Convert to byte -> Send FileInfo
+            for (File fileSend : files) {
+                BufferedInputStream bufferedInputStream = null;
+                FileInfo fileInfo = null;
+                try {
+                    bufferedInputStream = new BufferedInputStream(new FileInputStream(fileSend));
+                    fileInfo = new FileInfo();
+
+//                TODO: Get File info
+                    byte[] fileBytes = new byte[(int) fileSend.length()];
+                    bufferedInputStream.read(fileBytes, 0, fileBytes.length);
+                    fileInfo.setFilename(fileSend.getName());
+                    fileInfo.setDataBytes(fileBytes);
+                    fileInfo.setFileSize(fileSend.length());
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                } finally {
+                    closeStream(bufferedInputStream);
+                }
+
+//                TODO: Add FileInfo 2-end users
+                assert fileInfo != null;
+                fileInfo.setSender(Login.currentUser);
+                fileInfo.setReceiver(currentFriend);
+                Signal request = new Signal(Action.FILE, true, fileInfo, "");
+                try {
+                    ServerHandler.getObjectOutputStream().writeObject(request);
+                    ServerHandler.getObjectOutputStream().flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private boolean downFile(FileInfo fileInfo) {
+        BufferedOutputStream bufferedOutputStream = null;
+
+//        TODO: Check Download folder exist
+        File directory = new File("./Download");
+        if (!directory.exists())
+            directory.mkdir();
+
+//        TODO: Download file
+        try {
+            if (fileInfo != null) {
+                File fileReceive = new File("./Download".concat(fileInfo.getFilename()));
+                bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileReceive));
+                bufferedOutputStream.write(fileInfo.getDataBytes());
+                bufferedOutputStream.flush();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            closeStream(bufferedOutputStream);
+        }
+        return true;
+    }
+
     private ArrayList<User> filterUser(ArrayList<User> UOLList) {
         System.out.println(UOLList);
         int i = 0;
@@ -252,7 +349,7 @@ public class Message implements Initializable {
         chatArea.setDisable(false);
         friendNickName.setText(user.getNickname());
         this.currentFriend = user;
-        messageContainter.getChildren().clear();
+        messageContainer.getChildren().clear();
 
         if (checkHistory(this.currentFriend))
             loadHistoryMessage();
@@ -284,7 +381,7 @@ public class Message implements Initializable {
         container.setContentDisplay(ContentDisplay.CENTER);
         container.setAlignment(Pos.BASELINE_CENTER);
         HBox containMessageButton = new HBox();
-        containMessageButton.setMinWidth(this.messageContainter.getPrefWidth());
+        containMessageButton.setMinWidth(this.messageContainer.getPrefWidth());
         if (Login.currentUser.getUsername().equals(msg.getSender().getUsername())) {
             container.setStyle("-fx-background-color: #4298FB; -fx-text-fill: white; -fx-max-width : 240px");
             container.setWrapText(true);
@@ -298,7 +395,7 @@ public class Message implements Initializable {
             containMessageButton.setAlignment(Pos.BASELINE_RIGHT);
             HBox.setMargin(container, new Insets(0, 3, 5, 0));
         }
-        this.messageContainter.getChildren().add(containMessageButton);
+        this.messageContainer.getChildren().add(containMessageButton);
     }
 
     private void appendHistoryMessage(MessageModel msg) throws IOException {
