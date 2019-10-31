@@ -89,8 +89,10 @@ public class Message implements Initializable {
 
             Signal response = (Signal) ServerHandler.getObjectInputStream().readObject();
             if (response.getAction().equals(Action.UOL) && response.isStatus()) {
-                UserOnlineList userOnlineList = (UserOnlineList) response.getData();
-                this.refreshUserList(filterUser(userOnlineList.getUsers()));
+                UserAddressList userAddressList = (UserAddressList) response.getData();
+                System.out.println(userAddressList.toString());
+
+                //this.refreshUserList(filterUser(userOnlineList.getUsers()));
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -108,11 +110,11 @@ public class Message implements Initializable {
                             public void run() {
                                 switch (response.getAction()) {
                                     case UOL:
-                                        UserOnlineList userOnlineList = (UserOnlineList) response.getData();
+                                        UserAddressList userAddressList = (UserAddressList) response.getData();
 
-                                        System.out.println(userOnlineList.toString());
+                                        System.out.println(userAddressList.toString());
 
-                                        refreshUserList(filterUser(userOnlineList.getUsers()));
+                                        //refreshUserList(filterUser(userOnlineList.getUsers()));
                                         break;
                                     case MESSAGE:
                                         MessageModel message = (MessageModel) response.getData();
