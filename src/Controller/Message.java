@@ -319,14 +319,14 @@ public class Message implements Initializable {
         BufferedOutputStream bufferedOutputStream = null;
 
 //        TODO: Check Download folder exist
-        File directory = new File("./Download");
+        File directory = new File(getCurrentDir() + "/Resources/Download");
         if (!directory.exists())
             directory.mkdir();
 
 //        TODO: Download file
         try {
             if (fileInfo != null) {
-                File fileReceive = new File("./Download/".concat(fileInfo.getFilename()));
+                File fileReceive = new File(getCurrentDir() + "/Resources/Download/".concat(fileInfo.getFilename()));
                 bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileReceive));
                 bufferedOutputStream.write(fileInfo.getDataBytes());
                 bufferedOutputStream.flush();
@@ -395,7 +395,7 @@ public class Message implements Initializable {
     private boolean checkHistory(User user) throws UnsupportedEncodingException {
         String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
         File history = new File(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH);
-        System.out.println(history.getParentFile().mkdirs());
+        history.getParentFile().mkdirs();
         return history.exists();
     }
 
@@ -509,14 +509,15 @@ public class Message implements Initializable {
 
     private boolean checkHistoryFile(User user) {
         String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), user.getId());
-        File history = new File("./out/production/FXChat-Client/Resources/History/" + RECEIVE_FILE_PATH);
+        File history = new File(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH);
+        history.getParentFile().mkdirs();
         return history.exists();
     }
 
     private void createHistoryFile() throws IOException {
 //        TODO: Create history file for this.currentFriend
         String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), currentFriend.getId());
-        File history = new File("./out/production/FXChat-Client/Resources/History/" + RECEIVE_FILE_PATH);
+        File history = new File(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH);
         history.createNewFile();
     }
 
@@ -526,7 +527,7 @@ public class Message implements Initializable {
 
 //        TODO: Load downloaded file history for this.currentFriend
         String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), currentFriend.getId());
-        BufferedReader bufferedReader = new BufferedReader(new FileReader("./out/production/FXChat-Client/Resources/History/" + RECEIVE_FILE_PATH));
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH));
         String filename;
         while ((filename = bufferedReader.readLine()) != null) {
 //        TODO: call refreshFile(filename) to render open file button
@@ -536,7 +537,7 @@ public class Message implements Initializable {
 
     private void refreshFile(String filename) {
 //        TODO: Render open file button in dynamicFileList
-        InputStream inputIcon = getClass().getResourceAsStream("../Resources/Images/download.png");
+        InputStream inputIcon = getClass().getResourceAsStream("/Resources/Images/download.png");
         Image image = new Image(inputIcon);
 
         ImageView showIcon = new ImageView(image);
@@ -547,7 +548,7 @@ public class Message implements Initializable {
 //        TODO: setOnAction for button to open file
         file.setOnAction(e -> {
             try {
-                desktop.open(new File("./Download/".concat(filename)));
+                desktop.open(new File(getCurrentDir() + "/Resources/Download/".concat(filename)));
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
@@ -561,7 +562,7 @@ public class Message implements Initializable {
 
     private void appendHistoryFile(FileInfo fileInfo) throws IOException {
         String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), fileInfo.getSender().getId());
-        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + RECEIVE_FILE_PATH, true));
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH, true));
         bufferedWriter.write(fileInfo.getFilename().concat("\n"));
         bufferedWriter.close();
     }
