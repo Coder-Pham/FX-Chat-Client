@@ -9,6 +9,11 @@ public class Client {
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
 
+    public Client()
+    {
+
+    }
+
     public Client(Socket socket, ObjectOutputStream objectOutputStream, ObjectInputStream objectInputStream) {
         this.socket = socket;
         this.objectOutputStream = objectOutputStream;

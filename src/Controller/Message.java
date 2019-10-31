@@ -106,6 +106,7 @@ public class Message implements Initializable {
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+        Message.clientList = new ArrayList<Client>();
 
 //        TODO: Start subThread for Listener
         this.createServerListener();
@@ -214,19 +215,20 @@ public class Message implements Initializable {
 
     public void createFXServer()
     {
+        System.out.println("Thread fxServer start");
         Message.fxServerThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    Message.fxServer = new ServerSocket(7890);
+                    Message.fxServer = new ServerSocket(1111);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                System.out.println("Thread fxServer start");
                 while (!shuttingDown.get()) {
                     try {
                         //Waiting for client socket connect to serversocket
                         Socket client = Message.fxServer.accept();
+
                         Message.clientList.add(new Client(client,new ObjectOutputStream(client.getOutputStream()),new ObjectInputStream(client.getInputStream())));
 
                         System.out.println("A client just connect to our server");
