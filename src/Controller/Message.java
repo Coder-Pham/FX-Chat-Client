@@ -69,15 +69,13 @@ public class Message implements Initializable {
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private User currentFriend = new User(-1, "", "", "");
-    private static UserAddress currentFriendAddress = new UserAddress(new User(-1, "", "", ""),"127.0.0.1");
+    private UserAddress currentFriendAddress = new UserAddress(new User(-1, "", "", ""),"127.0.0.1");
 
     //    P2P Section
     public static Thread fxServerThread;
     public static Thread fxClientThread;
     public static ServerSocket fxServer;
-    public static ArrayList<Client> clientList;
-    public static ArrayList<Client> conectionToOtherUsers;
-
+    public static Client currentClient;
 
     private static CellProcessor[] getProcessors() {
         final CellProcessor[] processors = new CellProcessor[] {
@@ -104,13 +102,11 @@ public class Message implements Initializable {
 //                System.out.println("hello" + userAddressList.toString());
 
 //                this.refreshUserList(filterUser(userAddressList.getUserAddresses());
-                this.refreshUserList(userAddressList.getUserAddresses());
+                this.refreshUserList(this.filterUserAddress(userAddressList.getUserAddresses()));
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-        Message.clientList = new ArrayList<Client>();
-        Message.conectionToOtherUsers = new ArrayList<Client>();
 
 //        TODO: Start subThread for Listener
         this.createServerListener();
@@ -131,12 +127,13 @@ public class Message implements Initializable {
 //                    TODO: Send message to Server - Write down CSV
 //                    NOTE: When click to friend, already check to CSV
                     MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, text);
-                    Signal request = new Signal(Action.MESSAGE, true, messageModel, "");
+//                    Signal request = new Signal(Action.MESSAGE, true, messageModel, "");
                     try {
                         appendHistoryMessage(messageModel);
                         refreshMessage(messageModel);
-                        ServerHandler.getObjectOutputStream().writeObject(request);
-                        ServerHandler.getObjectOutputStream().flush();
+                        this.talkTo(this.currentFriendAddress.getAddress(),messageModel);
+//                        ServerHandler.getObjectOutputStream().writeObject(request);
+//                        ServerHandler.getObjectOutputStream().flush();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -161,9 +158,7 @@ public class Message implements Initializable {
                                     case UOL:
                                         UserAddressList userAddressList = (UserAddressList) response.getData();
 
-                                        System.out.println(userAddressList.toString());
-
-                                        //refreshUserList(filterUser(userOnlineList.getUsers()));
+                                        refreshUserList(filterUserAddress(userAddressList.getUserAddresses()));
                                         break;
                                     case MESSAGE:
                                         MessageModel message = (MessageModel) response.getData();
@@ -233,40 +228,33 @@ public class Message implements Initializable {
                         //Waiting for client socket connect to serversocket
                         Socket client = Message.fxServer.accept();
 
-                        Message.clientList.add(new Client(client,new ObjectOutputStream(client.getOutputStream()),new ObjectInputStream(client.getInputStream())));
+                        Message.currentClient = new Client(client,new ObjectOutputStream(client.getOutputStream()),new ObjectInputStream(client.getInputStream()));
 
                         System.out.println("A client just connect to our server");
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
-                                boolean status = true;
-                                Client client = Message.clientList.get(Message.clientList.size()-1);
-                                while (status && client.getSocket().isConnected()) {
+                                    Client client = Message.currentClient;
                                     //Read request object from client
                                     Signal request = Signal.getRequest(client.getObjectInputStream());
-                                    if (request == null) {
-                                        break;
-                                    }
-
-                                    // Classify request actions
-                                    switch (request.getAction()) {
-                                        case MESSAGE:
-                                            MessageModel newMessage = (MessageModel) request.getData();
-                                            System.out.println(newMessage.getContent());
+                                    if (request != null) {
+                                        switch (request.getAction()) {
+                                            case MESSAGE:
+                                                MessageModel newMessage = (MessageModel) request.getData();
+                                                System.out.println(newMessage.getContent());
 //                                            status = this.callSendMessage((MessageModel) request.getData());
-                                            break;
-                                        case FILE:
-                                               try {
-                                                downFile((FileInfo) request.getData());
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                            break;
-                                        default:
-                                            System.out.println("A client call to unknown function !!");
-                                            status = false;
+                                                break;
+                                            case FILE:
+                                                try {
+                                                    downFile((FileInfo) request.getData());
+                                                } catch (IOException e) {
+                                                    e.printStackTrace();
+                                                }
+                                                break;
+                                            default:
+                                                System.out.println("A client call to unknown function !!");
+                                        }
                                     }
-                                }
                             }
                         });
                     } catch (IOException e) {
@@ -280,81 +268,28 @@ public class Message implements Initializable {
         Message.fxServerThread.start();
     }
 
-    public void createFXClient()
+    public void talkTo(String address, MessageModel messageModel)
     {
-        System.out.println("Thread fxClient start");
-        Message.fxClientThread = new Thread(new Runnable() {
+        Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                try {
-                    Socket socket = new Socket(Message.currentFriendAddress.getAddress(),1111);
-
-                    Message.conectionToOtherUsers.add(new Client(socket,new ObjectOutputStream(socket.getOutputStream()),new ObjectInputStream(socket.getInputStream())));
-
-                } catch (IOException e) {
+                try{
+                    Socket socket = new Socket(address, 1111);
+                    ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+                    Signal request = new Signal(Action.MESSAGE,true,messageModel,"");
+                    Signal.sendResponse(request,objectOutputStream);
+                }
+                catch (IOException e)
+                {
                     e.printStackTrace();
                 }
-
-                while (!shuttingDown.get()) {
-                    try {
-                        Client socketClient = Message.conectionToOtherUsers.get(Message.conectionToOtherUsers.size()-1);
-                        Signal response = (Signal) socketClient.getObjectInputStream().readObject();
-
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                switch (response.getAction()) {
-                                    case MESSAGE:
-                                        MessageModel message = (MessageModel) response.getData();
-                                        System.out.println(message.getContent());
-//                                        TODO: Check for history to read - write
-//                                        try {
-//                                            if (!checkHistory(message.getSender())) {
-//                                                try {
-//                                                    createHistoryMessage(message.getSender());
-//                                                } catch (IOException e) {
-//                                                    e.printStackTrace();
-//                                                }
-//                                            }
-//                                        } catch (UnsupportedEncodingException e) {
-//                                            e.printStackTrace();
-//                                        }
-
-//                                        try {
-//                                            if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
-//                                                appendHistoryMessage(message);
-//                                                refreshMessage(message);
-//                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername())) {
-//                                                appendHistoryMessage(message);
-//                                                notification(message.getSender());
-//                                            }
-//                                        } catch (IOException e) {
-//                                            e.printStackTrace();
-//                                        }
-                                        break;
-                                    case FILE:
-                                        try {
-                                            downFile((FileInfo) response.getData());
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        });
-                    } catch (IOException | ClassNotFoundException e) {
-//                        e.printStackTrace();
-                        break;
-                    }
-                }
-
-
             }
         });
+    }
 
-        Message.fxClientThread.start();
+    public void sendFileTo(String address, FileInfo fileInfo)
+    {
+
     }
 
     @FXML
@@ -524,6 +459,18 @@ public class Message implements Initializable {
         return UOLList;
     }
 
+    private ArrayList<UserAddress> filterUserAddress(ArrayList<UserAddress> userAddressArrayList) {
+//        System.out.println(userAddressArrayList);
+        int i = 0;
+        while (i < userAddressArrayList.size())
+            if (userAddressArrayList.get(i).getUser().getId() == Login.currentUser.getId()) {
+                userAddressArrayList.remove(i);
+            }
+            else
+                i++;
+        return userAddressArrayList;
+    }
+
     private void refreshUserList(ArrayList<UserAddress> lst) {
 //        TODO: Refresh online users list
         InputStream inputIcon = getClass().getResourceAsStream("/Resources/Images/Online.png");
@@ -569,28 +516,20 @@ public class Message implements Initializable {
         User user = userAddress.getUser();
         friendNickname.setText(user.getNickname());
         this.currentFriend = user;
-        Message.currentFriendAddress = userAddress;
+        this.currentFriendAddress = userAddress;
         messageContainer.getChildren().clear();
         clearNotification();
 
-        this.createFXClient();
 
-        Client client = Message.conectionToOtherUsers.get(Message.conectionToOtherUsers.size()-1);
-        User userTest = new User(1,"TestName","Testpwd","TestNickname");
-        MessageModel messageModel = new MessageModel(userTest,userTest,"Hello world");
-        Signal request = new Signal(Action.MESSAGE,true,messageModel,"");
-        Signal.sendResponse(request,client.getObjectOutputStream());
+        if (checkHistory(this.currentFriend))
+            loadHistoryMessage();
+        else
+            createHistoryMessage(this.currentFriend);
 
-
-//        if (checkHistory(this.currentFriend))
-//            loadHistoryMessage();
-//        else
-//            createHistoryMessage(this.currentFriend);
-
-//        if (checkHistoryFile(this.currentFriend))
-//            loadHistoryFile();
-//        else
-//            createHistoryFile();
+        if (checkHistoryFile(this.currentFriend))
+            loadHistoryFile();
+        else
+            createHistoryFile();
     }
 
     private void createHistoryMessage(User user) throws IOException {
