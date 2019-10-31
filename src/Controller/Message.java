@@ -69,11 +69,14 @@ public class Message implements Initializable {
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private User currentFriend = new User(-1, "", "", "");
+    private static UserAddress currentFriendAddress = new UserAddress(new User(-1, "", "", ""),"127.0.0.1");
 
     //    P2P Section
     public static Thread fxServerThread;
+    public static Thread fxClientThread;
     public static ServerSocket fxServer;
     public static ArrayList<Client> clientList;
+    public static ArrayList<Client> conectionToOtherUsers;
 
 
     private static CellProcessor[] getProcessors() {
@@ -107,6 +110,7 @@ public class Message implements Initializable {
             e.printStackTrace();
         }
         Message.clientList = new ArrayList<Client>();
+        Message.conectionToOtherUsers = new ArrayList<Client>();
 
 //        TODO: Start subThread for Listener
         this.createServerListener();
@@ -252,7 +256,11 @@ public class Message implements Initializable {
 //                                            status = this.callSendMessage((MessageModel) request.getData());
                                             break;
                                         case FILE:
-//                                            status = this.callSendFile((FileInfo) request.getData());
+                                               try {
+                                                downFile((FileInfo) request.getData());
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
                                             break;
                                         default:
                                             System.out.println("A client call to unknown function !!");
@@ -270,6 +278,83 @@ public class Message implements Initializable {
         });
 
         Message.fxServerThread.start();
+    }
+
+    public void createFXClient()
+    {
+        System.out.println("Thread fxClient start");
+        Message.fxClientThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Socket socket = new Socket(Message.currentFriendAddress.getAddress(),1111);
+
+                    Message.conectionToOtherUsers.add(new Client(socket,new ObjectOutputStream(socket.getOutputStream()),new ObjectInputStream(socket.getInputStream())));
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                while (!shuttingDown.get()) {
+                    try {
+                        Client socketClient = Message.conectionToOtherUsers.get(Message.conectionToOtherUsers.size()-1);
+                        Signal response = (Signal) socketClient.getObjectInputStream().readObject();
+
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                switch (response.getAction()) {
+                                    case MESSAGE:
+                                        MessageModel message = (MessageModel) response.getData();
+                                        System.out.println(message.getContent());
+//                                        TODO: Check for history to read - write
+//                                        try {
+//                                            if (!checkHistory(message.getSender())) {
+//                                                try {
+//                                                    createHistoryMessage(message.getSender());
+//                                                } catch (IOException e) {
+//                                                    e.printStackTrace();
+//                                                }
+//                                            }
+//                                        } catch (UnsupportedEncodingException e) {
+//                                            e.printStackTrace();
+//                                        }
+
+//                                        try {
+//                                            if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
+//                                                appendHistoryMessage(message);
+//                                                refreshMessage(message);
+//                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername())) {
+//                                                appendHistoryMessage(message);
+//                                                notification(message.getSender());
+//                                            }
+//                                        } catch (IOException e) {
+//                                            e.printStackTrace();
+//                                        }
+                                        break;
+                                    case FILE:
+                                        try {
+                                            downFile((FileInfo) response.getData());
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        });
+                    } catch (IOException | ClassNotFoundException e) {
+//                        e.printStackTrace();
+                        break;
+                    }
+                }
+
+
+            }
+        });
+
+        Message.fxClientThread.start();
     }
 
     @FXML
@@ -449,16 +534,16 @@ public class Message implements Initializable {
             ImageView showIcon = new ImageView(image);
             showIcon.setFitHeight(10);
             showIcon.setFitWidth(10);
-            JFXButton user = new JFXButton(lst.get(i).getUser().getUsername()+lst.get(i).getAddress(), showIcon);
+            JFXButton user = new JFXButton(lst.get(i).getUser().getUsername(), showIcon);
 
             int userID = i;
-//            user.setOnAction(e -> {
-//                try {
-//                    connectFriend(lst.get(userID));
-//                } catch (IOException ex) {
-//                    ex.printStackTrace();
-//                }
-//            });
+            user.setOnAction(e -> {
+                try {
+                    connectFriend(lst.get(userID));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
             user.setContentDisplay(ContentDisplay.RIGHT);
             user.setMinWidth(this.dynamicUserOnlineList.getPrefWidth());
             user.setAlignment(Pos.BASELINE_RIGHT);
@@ -479,22 +564,33 @@ public class Message implements Initializable {
         return history.exists();
     }
 
-    private void connectFriend(User user) throws IOException {
+    private void connectFriend(UserAddress userAddress) throws IOException {
         chatArea.setDisable(false);
+        User user = userAddress.getUser();
         friendNickname.setText(user.getNickname());
         this.currentFriend = user;
+        Message.currentFriendAddress = userAddress;
         messageContainer.getChildren().clear();
         clearNotification();
 
-        if (checkHistory(this.currentFriend))
-            loadHistoryMessage();
-        else
-            createHistoryMessage(this.currentFriend);
+        this.createFXClient();
 
-        if (checkHistoryFile(this.currentFriend))
-            loadHistoryFile();
-        else
-            createHistoryFile();
+        Client client = Message.conectionToOtherUsers.get(Message.conectionToOtherUsers.size()-1);
+        User userTest = new User(1,"TestName","Testpwd","TestNickname");
+        MessageModel messageModel = new MessageModel(userTest,userTest,"Hello world");
+        Signal request = new Signal(Action.MESSAGE,true,messageModel,"");
+        Signal.sendResponse(request,client.getObjectOutputStream());
+
+
+//        if (checkHistory(this.currentFriend))
+//            loadHistoryMessage();
+//        else
+//            createHistoryMessage(this.currentFriend);
+
+//        if (checkHistoryFile(this.currentFriend))
+//            loadHistoryFile();
+//        else
+//            createHistoryFile();
     }
 
     private void createHistoryMessage(User user) throws IOException {
