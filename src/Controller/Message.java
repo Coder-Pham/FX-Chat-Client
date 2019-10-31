@@ -27,6 +27,8 @@ import javafx.scene.layout.VBox;
 
 import java.awt.*;
 import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
@@ -68,6 +70,12 @@ public class Message implements Initializable {
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private User currentFriend = new User(-1, "", "", "");
 
+    //    P2P Section
+    public static Thread fxServerThread;
+    public static ServerSocket fxServer;
+    public static ArrayList<Client> clientList;
+
+
     private static CellProcessor[] getProcessors() {
         final CellProcessor[] processors = new CellProcessor[] {
                 new NotNull(), // Nickname
@@ -90,15 +98,51 @@ public class Message implements Initializable {
             Signal response = (Signal) ServerHandler.getObjectInputStream().readObject();
             if (response.getAction().equals(Action.UOL) && response.isStatus()) {
                 UserAddressList userAddressList = (UserAddressList) response.getData();
-                System.out.println(userAddressList.toString());
+//                System.out.println("hello" + userAddressList.toString());
 
-                //this.refreshUserList(filterUser(userOnlineList.getUsers()));
+//                this.refreshUserList(filterUser(userAddressList.getUserAddresses());
+                this.refreshUserList(userAddressList.getUserAddresses());
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
 //        TODO: Start subThread for Listener
+        this.createServerListener();
+
+        this.createFXServer();
+
+        textMessage.setOnKeyPressed((event) -> {
+            if(event.getCode() == KeyCode.ENTER) {
+                event.consume(); // otherwise a new line will be added to the textArea after the sendFunction() call
+                if (event.isShiftDown()) {
+                    textMessage.appendText(System.getProperty("line.separator"));
+                } else {
+                    String text = textMessage.getText();
+                    if (text == null)
+                        text = "\n";
+                    System.out.println("Message sent: " + text);
+
+//                    TODO: Send message to Server - Write down CSV
+//                    NOTE: When click to friend, already check to CSV
+                    MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, text);
+                    Signal request = new Signal(Action.MESSAGE, true, messageModel, "");
+                    try {
+                        appendHistoryMessage(messageModel);
+                        refreshMessage(messageModel);
+                        ServerHandler.getObjectOutputStream().writeObject(request);
+                        ServerHandler.getObjectOutputStream().flush();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    textMessage.setText("");
+                }
+            }
+        });
+    }
+
+    public void createServerListener()
+    {
         serverListener = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -163,35 +207,67 @@ public class Message implements Initializable {
                 }
             }
         });
+
         serverListener.start();
 
-        textMessage.setOnKeyPressed((event) -> {
-            if(event.getCode() == KeyCode.ENTER) {
-                event.consume(); // otherwise a new line will be added to the textArea after the sendFunction() call
-                if (event.isShiftDown()) {
-                    textMessage.appendText(System.getProperty("line.separator"));
-                } else {
-                    String text = textMessage.getText();
-                    if (text == null)
-                        text = "\n";
-                    System.out.println("Message sent: " + text);
+    }
 
-//                    TODO: Send message to Server - Write down CSV
-//                    NOTE: When click to friend, already check to CSV
-                    MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, text);
-                    Signal request = new Signal(Action.MESSAGE, true, messageModel, "");
+    public void createFXServer()
+    {
+        Message.fxServerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Message.fxServer = new ServerSocket(7890);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("Thread fxServer start");
+                while (!shuttingDown.get()) {
                     try {
-                        appendHistoryMessage(messageModel);
-                        refreshMessage(messageModel);
-                        ServerHandler.getObjectOutputStream().writeObject(request);
-                        ServerHandler.getObjectOutputStream().flush();
+                        //Waiting for client socket connect to serversocket
+                        Socket client = Message.fxServer.accept();
+                        Message.clientList.add(new Client(client,new ObjectOutputStream(client.getOutputStream()),new ObjectInputStream(client.getInputStream())));
+
+                        System.out.println("A client just connect to our server");
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                boolean status = true;
+                                Client client = Message.clientList.get(Message.clientList.size()-1);
+                                while (status && client.getSocket().isConnected()) {
+                                    //Read request object from client
+                                    Signal request = Signal.getRequest(client.getObjectInputStream());
+                                    if (request == null) {
+                                        break;
+                                    }
+
+                                    // Classify request actions
+                                    switch (request.getAction()) {
+                                        case MESSAGE:
+                                            MessageModel newMessage = (MessageModel) request.getData();
+                                            System.out.println(newMessage.getContent());
+//                                            status = this.callSendMessage((MessageModel) request.getData());
+                                            break;
+                                        case FILE:
+//                                            status = this.callSendFile((FileInfo) request.getData());
+                                            break;
+                                        default:
+                                            System.out.println("A client call to unknown function !!");
+                                            status = false;
+                                    }
+                                }
+                            }
+                        });
                     } catch (IOException e) {
-                        e.printStackTrace();
+//                        e.printStackTrace();
+                        break;
                     }
-                    textMessage.setText("");
                 }
             }
         });
+
+        Message.fxServerThread.start();
     }
 
     @FXML
@@ -361,7 +437,7 @@ public class Message implements Initializable {
         return UOLList;
     }
 
-    private void refreshUserList(ArrayList<User> lst) {
+    private void refreshUserList(ArrayList<UserAddress> lst) {
 //        TODO: Refresh online users list
         InputStream inputIcon = getClass().getResourceAsStream("/Resources/Images/Online.png");
         Image image = new Image(inputIcon);
@@ -371,16 +447,16 @@ public class Message implements Initializable {
             ImageView showIcon = new ImageView(image);
             showIcon.setFitHeight(10);
             showIcon.setFitWidth(10);
-            JFXButton user = new JFXButton(lst.get(i).getUsername(), showIcon);
+            JFXButton user = new JFXButton(lst.get(i).getUser().getUsername()+lst.get(i).getAddress(), showIcon);
 
             int userID = i;
-            user.setOnAction(e -> {
-                try {
-                    connectFriend(lst.get(userID));
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            });
+//            user.setOnAction(e -> {
+//                try {
+//                    connectFriend(lst.get(userID));
+//                } catch (IOException ex) {
+//                    ex.printStackTrace();
+//                }
+//            });
             user.setContentDisplay(ContentDisplay.RIGHT);
             user.setMinWidth(this.dynamicUserOnlineList.getPrefWidth());
             user.setAlignment(Pos.BASELINE_RIGHT);
