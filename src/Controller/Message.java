@@ -28,10 +28,9 @@ import javafx.scene.layout.VBox;
 import java.awt.*;
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.net.URLDecoder;
+import java.util.*;
 import java.util.List;
-import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javafx.stage.FileChooser;
@@ -119,12 +118,16 @@ public class Message implements Initializable {
                                         MessageModel message = (MessageModel) response.getData();
 
 //                                        TODO: Check for history to read - write
-                                        if (!checkHistory(message.getSender())) {
-                                            try {
-                                                createHistoryMessage(message.getSender());
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
+                                        try {
+                                            if (!checkHistory(message.getSender())) {
+                                                try {
+                                                    createHistoryMessage(message.getSender());
+                                                } catch (IOException e) {
+                                                    e.printStackTrace();
+                                                }
                                             }
+                                        } catch (UnsupportedEncodingException e) {
+                                            e.printStackTrace();
                                         }
 
                                         try {
@@ -207,7 +210,7 @@ public class Message implements Initializable {
             e.printStackTrace();
         }
 
-        FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("../View/Login.fxml"));
+        FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("/View/Login.fxml"));
         StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 500));
     }
 
@@ -358,7 +361,7 @@ public class Message implements Initializable {
 
     private void refreshUserList(ArrayList<User> lst) {
 //        TODO: Refresh online users list
-        InputStream inputIcon = getClass().getResourceAsStream("../Resources/Images/Online.png");
+        InputStream inputIcon = getClass().getResourceAsStream("/Resources/Images/Online.png");
         Image image = new Image(inputIcon);
         this.dynamicUserOnlineList.getChildren().clear();
 
@@ -383,9 +386,16 @@ public class Message implements Initializable {
         }
     }
 
-    private boolean checkHistory(User user) {
+    private String getCurrentDir() {
+        URL jarLocationUrl = Message.class.getProtectionDomain().getCodeSource().getLocation();
+        String jarLocation = new File(jarLocationUrl.toString()).getParent();
+        return jarLocation.substring(6);
+    }
+
+    private boolean checkHistory(User user) throws UnsupportedEncodingException {
         String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
-        File history = new File("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH);
+        File history = new File(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH);
+        System.out.println(history.getParentFile().mkdirs());
         return history.exists();
     }
 
@@ -411,7 +421,7 @@ public class Message implements Initializable {
         String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
         ICsvListWriter listWriter = null;
         try {
-            listWriter = new CsvListWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
+            listWriter = new CsvListWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
 
             final CellProcessor[] processors = getProcessors();
             final String[] header = new String[]{"User", "Message"};
@@ -456,7 +466,7 @@ public class Message implements Initializable {
             CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getSender().getId());
         ICsvListWriter listWriter = null;
         try {
-            listWriter = new CsvListWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
+            listWriter = new CsvListWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
 
             final CellProcessor[] processors = getProcessors();
             final String[] header = new String[]{"User", "Message"};
@@ -475,7 +485,7 @@ public class Message implements Initializable {
         String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), this.currentFriend.getId());
         ICsvListReader listReader = null;
         try {
-            listReader = new CsvListReader(new FileReader("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
+            listReader = new CsvListReader(new FileReader(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
 
             listReader.getHeader(true);
             final CellProcessor[] processors = getProcessors();
