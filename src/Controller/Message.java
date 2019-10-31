@@ -60,20 +60,20 @@ public class Message implements Initializable {
     private ScrollPane messageScrollArea;
     @FXML
     private JFXButton fileIcon;
+    @FXML
+    private VBox dynamicFileList;
 
     private Desktop desktop = Desktop.getDesktop();
 
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
-    private User currentFriend = null;
+    private User currentFriend = new User(-1, "", "", "");
 
     private static CellProcessor[] getProcessors() {
-
         final CellProcessor[] processors = new CellProcessor[] {
                 new NotNull(), // Nickname
                 new NotNull(), // Message
         };
-
         return processors;
     }
 
@@ -140,7 +140,11 @@ public class Message implements Initializable {
                                         }
                                         break;
                                     case FILE:
-                                        downFile((FileInfo) response.getData());
+                                        try {
+                                            downFile((FileInfo) response.getData());
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
                                         break;
                                     default:
                                         break;
@@ -212,7 +216,8 @@ public class Message implements Initializable {
             JFXButton friend = (JFXButton) dynamicUserOnlineList.getChildren().get(i);
             if (friend.getText().equals(sender.getUsername())) {
                 friend.setStyle("-fx-background-color: #8186d5; ");
-                dynamicUserOnlineList.getChildren().add(i, friend);
+                dynamicUserOnlineList.getChildren().remove(i);
+                dynamicUserOnlineList.getChildren().add(0, friend);
                 break;
             }
         }
@@ -223,6 +228,7 @@ public class Message implements Initializable {
             JFXButton friend = (JFXButton) dynamicUserOnlineList.getChildren().get(i);
             if (friend.getText().equals(currentFriend.getUsername())) {
                 friend.setStyle("-fx-background-color: #FFFFFF; ");
+                dynamicUserOnlineList.getChildren().remove(i);
                 dynamicUserOnlineList.getChildren().add(i, friend);
                 break;
             }
@@ -306,7 +312,7 @@ public class Message implements Initializable {
         }
     }
 
-    private boolean downFile(FileInfo fileInfo) {
+    private boolean downFile(FileInfo fileInfo) throws IOException {
         BufferedOutputStream bufferedOutputStream = null;
 
 //        TODO: Check Download folder exist
@@ -328,6 +334,13 @@ public class Message implements Initializable {
         } finally {
             closeStream(bufferedOutputStream);
         }
+
+//        TODO: Write filename to HISTORY FILE
+        assert fileInfo != null;
+        appendHistoryFile(fileInfo);
+        if (currentFriend.getId() == fileInfo.getSender().getId())
+            refreshFile(fileInfo.getFilename());
+
         return true;
     }
 
@@ -387,6 +400,11 @@ public class Message implements Initializable {
             loadHistoryMessage();
         else
             createHistoryMessage(this.currentFriend);
+
+        if (checkHistoryFile(this.currentFriend))
+            loadHistoryFile();
+        else
+            createHistoryFile();
     }
 
     private void createHistoryMessage(User user) throws IOException {
@@ -453,7 +471,6 @@ public class Message implements Initializable {
     }
 
     @SuppressWarnings("resource")
-//    @Deprecated
     private void loadHistoryMessage() throws IOException {
         String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), this.currentFriend.getId());
         ICsvListReader listReader = null;
@@ -480,4 +497,62 @@ public class Message implements Initializable {
         }
     }
 
+    private boolean checkHistoryFile(User user) {
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), user.getId());
+        File history = new File("./out/production/FXChat-Client/Resources/History/" + RECEIVE_FILE_PATH);
+        return history.exists();
+    }
+
+    private void createHistoryFile() throws IOException {
+//        TODO: Create history file for this.currentFriend
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), currentFriend.getId());
+        File history = new File("./out/production/FXChat-Client/Resources/History/" + RECEIVE_FILE_PATH);
+        history.createNewFile();
+    }
+
+    private void loadHistoryFile() throws IOException {
+//        TODO: Clear history file
+        dynamicFileList.getChildren().clear();
+
+//        TODO: Load downloaded file history for this.currentFriend
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), currentFriend.getId());
+        BufferedReader bufferedReader = new BufferedReader(new FileReader("./out/production/FXChat-Client/Resources/History/" + RECEIVE_FILE_PATH));
+        String filename;
+        while ((filename = bufferedReader.readLine()) != null) {
+//        TODO: call refreshFile(filename) to render open file button
+            refreshFile(filename);
+        }
+    }
+
+    private void refreshFile(String filename) {
+//        TODO: Render open file button in dynamicFileList
+        InputStream inputIcon = getClass().getResourceAsStream("../Resources/Images/download.png");
+        Image image = new Image(inputIcon);
+
+        ImageView showIcon = new ImageView(image);
+        showIcon.setFitHeight(20);
+        showIcon.setFitWidth(20);
+        JFXButton file = new JFXButton(filename, showIcon);
+
+//        TODO: setOnAction for button to open file
+        file.setOnAction(e -> {
+            try {
+                desktop.open(new File("./Download/".concat(filename)));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        file.setContentDisplay(ContentDisplay.LEFT);
+        file.setMinWidth(this.dynamicFileList.getPrefWidth());
+        file.setAlignment(Pos.BASELINE_LEFT);
+        this.dynamicFileList.getChildren().add(file);
+    }
+
+    private void appendHistoryFile(FileInfo fileInfo) throws IOException {
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), fileInfo.getSender().getId());
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + RECEIVE_FILE_PATH, true));
+        bufferedWriter.write(fileInfo.getFilename().concat("\n"));
+        bufferedWriter.close();
+    }
 }

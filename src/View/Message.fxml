@@ -101,7 +101,7 @@
                     <content>
                         <VBox prefWidth="225.0">
                             <children>
-                                <HBox prefHeight="268.0" prefWidth="449.0">
+                                <HBox prefHeight="100.0" prefWidth="449.0">
                                     <children>
                                         <ImageView fitHeight="96.0" fitWidth="107.0" pickOnBounds="true" preserveRatio="true">
                                             <image>
@@ -118,6 +118,12 @@
                                         </Label>
                                     </children>
                                 </HBox>
+                                <ScrollPane fx:id="DownladFileList" fitToWidth="true" hbarPolicy="NEVER" pannable="true"
+                                            prefHeight="500.0" prefWidth="225.0" style="-fx-box-border: transparent;">
+                                    <content>
+                                        <VBox fx:id="dynamicFileList" alignment="CENTER_RIGHT" prefWidth="225.0"/>
+                                    </content>
+                                </ScrollPane>
                             </children>
                         </VBox>
                     </content>
