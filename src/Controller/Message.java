@@ -230,7 +230,7 @@ public class Message implements Initializable {
 
                         Message.currentClient = new Client(client,new ObjectOutputStream(client.getOutputStream()),new ObjectInputStream(client.getInputStream()));
 
-                        System.out.println("A client just connect to our server");
+//                        System.out.println("A client just connect to our server");
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -240,9 +240,32 @@ public class Message implements Initializable {
                                     if (request != null) {
                                         switch (request.getAction()) {
                                             case MESSAGE:
-                                                MessageModel newMessage = (MessageModel) request.getData();
-                                                System.out.println(newMessage.getContent());
-//                                            status = this.callSendMessage((MessageModel) request.getData());
+                                                MessageModel message = (MessageModel) request.getData();
+
+//                                        TODO: Check for history to read - write
+                                                try {
+                                                    if (!checkHistory(message.getSender())) {
+                                                        try {
+                                                            createHistoryMessage(message.getSender());
+                                                        } catch (IOException e) {
+                                                            e.printStackTrace();
+                                                        }
+                                                    }
+                                                } catch (UnsupportedEncodingException e) {
+                                                    e.printStackTrace();
+                                                }
+
+                                                try {
+                                                    if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
+                                                        appendHistoryMessage(message);
+                                                        refreshMessage(message);
+                                                    } else if (!message.getSender().getUsername().equals(currentFriend.getUsername())) {
+                                                        appendHistoryMessage(message);
+                                                        notification(message.getSender());
+                                                    }
+                                                } catch (IOException e) {
+                                                    e.printStackTrace();
+                                                }
                                                 break;
                                             case FILE:
                                                 try {
