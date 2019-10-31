@@ -24,4 +24,9 @@ public final class StageView {
     public static void show() {
         currentstage.show();
     }
+
+    public static void setSize(int height, int width) {
+        currentstage.setWidth(width);
+        currentstage.setHeight(height);
+    }
 }

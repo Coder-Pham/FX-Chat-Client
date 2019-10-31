@@ -13,6 +13,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 
 import java.io.IOException;
@@ -30,6 +31,7 @@ public class Login implements Initializable {
     private JFXButton registerButton;
     @FXML
     private Label error;
+    public static User currentUser;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -59,7 +61,11 @@ public class Login implements Initializable {
 
 //      TODO: If successful login, then create new Stage - Scene for main
         if (response.isStatus()) {
+            currentUser = (User) response.getData();
             System.out.println("Login Successful");
+
+            FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("/View/Message.fxml"));
+            StageView.getStage().setScene(new Scene(messageLoader.load(), 1000, 700));
         }
 //      TODO: If failed, reset scene
         else if (response.getAction().equals(Action.LOGIN)) {
@@ -71,6 +77,8 @@ public class Login implements Initializable {
     @FXML
     public void registerClick(ActionEvent actionEvent) throws IOException {
 //        TODO: Switch Register scene
-        StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Register.fxml")));
+//        StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Register.fxml")));
+        FXMLLoader registerLoader = new FXMLLoader(getClass().getResource("/View/Register.fxml"));
+        StageView.getStage().setScene(new Scene(registerLoader.load(), 600, 500));
     }
 }
