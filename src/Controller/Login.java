@@ -79,6 +79,6 @@ public class Login implements Initializable {
 //        TODO: Switch Register scene
 //        StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Register.fxml")));
         FXMLLoader registerLoader = new FXMLLoader(getClass().getResource("../View/Register.fxml"));
-        StageView.getStage().setScene(new Scene(registerLoader.load(), 600, 460));
+        StageView.getStage().setScene(new Scene(registerLoader.load(), 600, 500));
     }
 }

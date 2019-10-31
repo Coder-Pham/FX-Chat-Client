@@ -12,9 +12,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="460.0"
-      prefWidth="600.0" stylesheets="@../Resources/Styles/global.css" xmlns="http://javafx.com/javafx/8.0.171"
-      xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.Register">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="600.0" snapToPixel="false" stylesheets="@../Resources/Styles/global.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.Register">
     <children>
         <HBox alignment="CENTER" prefHeight="51.0" prefWidth="600.0">
             <children>
@@ -32,12 +30,12 @@
                   <Insets left="105.0" />
                </HBox.margin>
                <children>
-                  <Label fx:id="nickNameLabel" styleClass="same-label" text="Nickname:">
+                  <Label fx:id="userNameLabel" styleClass="same-label" text="Username:">
                      <VBox.margin>
                         <Insets bottom="10.0" />
                      </VBox.margin>
                   </Label>
-                  <JFXTextField fx:id="nickname" styleClass="same-label" />
+                  <JFXTextField fx:id="username" styleClass="same-label" />
                </children>
             </VBox>
          </children>
@@ -49,13 +47,13 @@
                         <Insets left="105.0" />
                     </HBox.margin>
                     <children>
-                        <Label fx:id="userNameLabel" styleClass="same-label" text="Username">
+                        <Label fx:id="nickNameLabel" styleClass="same-label" text="Nickname:">
                             <VBox.margin>
                                 <Insets bottom="10.0" top="20.0" />
                             </VBox.margin>
                         </Label>
                   <StackPane fx:id="stackDialog" prefHeight="150.0" prefWidth="200.0" />
-                  <JFXTextField fx:id="username" styleClass="same-label" />
+                  <JFXTextField fx:id="nickname" styleClass="same-label" />
                     </children>
                 </VBox>
             </children>
@@ -94,14 +92,15 @@
             </VBox>
          </children>
       </HBox>
-        <HBox alignment="TOP_RIGHT" prefHeight="82.0" prefWidth="600.0">
+      <HBox prefHeight="50.0" prefWidth="600.0" />
+        <HBox alignment="TOP_RIGHT" prefHeight="114.0" prefWidth="600.0">
             <children>
                 <Label fx:id="error" styleClass="same-label" textFill="RED">
                     <HBox.margin>
                         <Insets right="10.0" top="19.0" />
                     </HBox.margin>
                 </Label>
-            <JFXButton fx:id="loginButton" onAction="#loginClick" prefHeight="38.0" prefWidth="102.0" styleClass="login-button" text="Login" textFill="WHITE">
+            <JFXButton fx:id="loginButton" alignment="CENTER" onAction="#loginClick" pickOnBounds="false" prefHeight="38.0" prefWidth="102.0" styleClass="login-button" text="Login" textAlignment="CENTER" textFill="WHITE">
                <font>
                   <Font size="19.0" />
                </font>
@@ -109,7 +108,7 @@
                   <Insets right="10.0" top="8.0" />
                </HBox.margin>
             </JFXButton>
-                <JFXButton fx:id="registerButton" onAction="#registerClick" prefHeight="38.0" prefWidth="102.0" styleClass="register-button" text="Register" textFill="WHITE">
+                <JFXButton fx:id="registerButton" defaultButton="true" onAction="#registerClick" prefHeight="38.0" prefWidth="102.0" styleClass="register-button" text="Register" textFill="WHITE">
                     <HBox.margin>
                         <Insets right="105.0" top="8.0" />
                     </HBox.margin>

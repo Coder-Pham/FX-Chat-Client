@@ -54,7 +54,7 @@
                                 </HBox>
                                 <HBox alignment="CENTER_RIGHT" prefHeight="99.0" prefWidth="275.0">
                                     <children>
-                                        <Label fx:id="friendNickName" text="Friend">
+                                        <Label fx:id="friendNickname" text="Friend">
                                             <HBox.margin>
                                                 <Insets right="10.0" />
                                             </HBox.margin>
