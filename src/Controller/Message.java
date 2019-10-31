@@ -49,7 +49,7 @@ public class Message implements Initializable {
     @FXML
     private Label userNickName;
     @FXML
-    private Label friendNickName;
+    private Label friendNickname;
     @FXML
     private JFXTextArea textMessage;
     @FXML
@@ -202,7 +202,7 @@ public class Message implements Initializable {
         }
 
         FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("../View/Login.fxml"));
-        StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 444));
+        StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 500));
     }
 
     private void closeStream(InputStream inputStream) {
@@ -329,7 +329,7 @@ public class Message implements Initializable {
             ImageView showIcon = new ImageView(image);
             showIcon.setFitHeight(10);
             showIcon.setFitWidth(10);
-            JFXButton user = new JFXButton(lst.get(i).getNickname(), showIcon);
+            JFXButton user = new JFXButton(lst.get(i).getUsername(), showIcon);
 
             int userID = i;
             user.setOnAction(e -> {
@@ -354,7 +354,7 @@ public class Message implements Initializable {
 
     private void connectFriend(User user) throws IOException {
         chatArea.setDisable(false);
-        friendNickName.setText(user.getNickname());
+        friendNickname.setText(user.getNickname());
         this.currentFriend = user;
         messageContainer.getChildren().clear();
 
