@@ -28,10 +28,9 @@ import javafx.scene.layout.VBox;
 import java.awt.*;
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.net.URLDecoder;
+import java.util.*;
 import java.util.List;
-import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javafx.stage.FileChooser;
@@ -49,7 +48,7 @@ public class Message implements Initializable {
     @FXML
     private Label userNickName;
     @FXML
-    private Label friendNickName;
+    private Label friendNickname;
     @FXML
     private JFXTextArea textMessage;
     @FXML
@@ -60,20 +59,20 @@ public class Message implements Initializable {
     private ScrollPane messageScrollArea;
     @FXML
     private JFXButton fileIcon;
+    @FXML
+    private VBox dynamicFileList;
 
     private Desktop desktop = Desktop.getDesktop();
 
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
-    private User currentFriend = null;
+    private User currentFriend = new User(-1, "", "", "");
 
     private static CellProcessor[] getProcessors() {
-
         final CellProcessor[] processors = new CellProcessor[] {
                 new NotNull(), // Nickname
                 new NotNull(), // Message
         };
-
         return processors;
     }
 
@@ -119,26 +118,36 @@ public class Message implements Initializable {
                                         MessageModel message = (MessageModel) response.getData();
 
 //                                        TODO: Check for history to read - write
-                                        if (!checkHistory(message.getSender())) {
-                                            try {
-                                                createHistoryMessage(message.getSender());
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
+                                        try {
+                                            if (!checkHistory(message.getSender())) {
+                                                try {
+                                                    createHistoryMessage(message.getSender());
+                                                } catch (IOException e) {
+                                                    e.printStackTrace();
+                                                }
                                             }
+                                        } catch (UnsupportedEncodingException e) {
+                                            e.printStackTrace();
                                         }
 
                                         try {
                                             if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
                                                 appendHistoryMessage(message);
                                                 refreshMessage(message);
-                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername()))
+                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername())) {
                                                 appendHistoryMessage(message);
+                                                notification(message.getSender());
+                                            }
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                         }
                                         break;
                                     case FILE:
-                                        downFile((FileInfo) response.getData());
+                                        try {
+                                            downFile((FileInfo) response.getData());
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
                                         break;
                                     default:
                                         break;
@@ -201,8 +210,32 @@ public class Message implements Initializable {
             e.printStackTrace();
         }
 
-        FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("../View/Login.fxml"));
-        StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 444));
+        FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("/View/Login.fxml"));
+        StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 500));
+    }
+
+    private void notification(User sender) {
+        for (int i = 0; i < dynamicUserOnlineList.getChildren().size(); i++) {
+            JFXButton friend = (JFXButton) dynamicUserOnlineList.getChildren().get(i);
+            if (friend.getText().equals(sender.getUsername())) {
+                friend.setStyle("-fx-background-color: #8186d5; ");
+                dynamicUserOnlineList.getChildren().remove(i);
+                dynamicUserOnlineList.getChildren().add(0, friend);
+                break;
+            }
+        }
+    }
+
+    private void clearNotification() {
+        for (int i = 0; i < dynamicUserOnlineList.getChildren().size(); i++) {
+            JFXButton friend = (JFXButton) dynamicUserOnlineList.getChildren().get(i);
+            if (friend.getText().equals(currentFriend.getUsername())) {
+                friend.setStyle("-fx-background-color: #FFFFFF; ");
+                dynamicUserOnlineList.getChildren().remove(i);
+                dynamicUserOnlineList.getChildren().add(i, friend);
+                break;
+            }
+        }
     }
 
     private void closeStream(InputStream inputStream) {
@@ -282,18 +315,18 @@ public class Message implements Initializable {
         }
     }
 
-    private boolean downFile(FileInfo fileInfo) {
+    private boolean downFile(FileInfo fileInfo) throws IOException {
         BufferedOutputStream bufferedOutputStream = null;
 
 //        TODO: Check Download folder exist
-        File directory = new File("./Download");
+        File directory = new File(getCurrentDir() + "/Resources/Download");
         if (!directory.exists())
             directory.mkdir();
 
 //        TODO: Download file
         try {
             if (fileInfo != null) {
-                File fileReceive = new File("./Download/".concat(fileInfo.getFilename()));
+                File fileReceive = new File(getCurrentDir() + "/Resources/Download/".concat(fileInfo.getFilename()));
                 bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileReceive));
                 bufferedOutputStream.write(fileInfo.getDataBytes());
                 bufferedOutputStream.flush();
@@ -304,6 +337,13 @@ public class Message implements Initializable {
         } finally {
             closeStream(bufferedOutputStream);
         }
+
+//        TODO: Write filename to HISTORY FILE
+        assert fileInfo != null;
+        appendHistoryFile(fileInfo);
+        if (currentFriend.getId() == fileInfo.getSender().getId())
+            refreshFile(fileInfo.getFilename());
+
         return true;
     }
 
@@ -321,7 +361,7 @@ public class Message implements Initializable {
 
     private void refreshUserList(ArrayList<User> lst) {
 //        TODO: Refresh online users list
-        InputStream inputIcon = getClass().getResourceAsStream("../Resources/Images/Online.png");
+        InputStream inputIcon = getClass().getResourceAsStream("/Resources/Images/Online.png");
         Image image = new Image(inputIcon);
         this.dynamicUserOnlineList.getChildren().clear();
 
@@ -329,7 +369,7 @@ public class Message implements Initializable {
             ImageView showIcon = new ImageView(image);
             showIcon.setFitHeight(10);
             showIcon.setFitWidth(10);
-            JFXButton user = new JFXButton(lst.get(i).getNickname(), showIcon);
+            JFXButton user = new JFXButton(lst.get(i).getUsername(), showIcon);
 
             int userID = i;
             user.setOnAction(e -> {
@@ -346,29 +386,42 @@ public class Message implements Initializable {
         }
     }
 
-    private boolean checkHistory(User user) {
+    private String getCurrentDir() {
+        URL jarLocationUrl = Message.class.getProtectionDomain().getCodeSource().getLocation();
+        String jarLocation = new File(jarLocationUrl.toString()).getParent();
+        return jarLocation.substring(6);
+    }
+
+    private boolean checkHistory(User user) throws UnsupportedEncodingException {
         String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
-        File history = new File("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH);
+        File history = new File(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH);
+        history.getParentFile().mkdirs();
         return history.exists();
     }
 
     private void connectFriend(User user) throws IOException {
         chatArea.setDisable(false);
-        friendNickName.setText(user.getNickname());
+        friendNickname.setText(user.getNickname());
         this.currentFriend = user;
         messageContainer.getChildren().clear();
+        clearNotification();
 
         if (checkHistory(this.currentFriend))
             loadHistoryMessage();
         else
             createHistoryMessage(this.currentFriend);
+
+        if (checkHistoryFile(this.currentFriend))
+            loadHistoryFile();
+        else
+            createHistoryFile();
     }
 
     private void createHistoryMessage(User user) throws IOException {
         String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
         ICsvListWriter listWriter = null;
         try {
-            listWriter = new CsvListWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
+            listWriter = new CsvListWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
 
             final CellProcessor[] processors = getProcessors();
             final String[] header = new String[]{"User", "Message"};
@@ -413,7 +466,7 @@ public class Message implements Initializable {
             CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getSender().getId());
         ICsvListWriter listWriter = null;
         try {
-            listWriter = new CsvListWriter(new FileWriter("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
+            listWriter = new CsvListWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
 
             final CellProcessor[] processors = getProcessors();
             final String[] header = new String[]{"User", "Message"};
@@ -428,12 +481,11 @@ public class Message implements Initializable {
     }
 
     @SuppressWarnings("resource")
-//    @Deprecated
     private void loadHistoryMessage() throws IOException {
         String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), this.currentFriend.getId());
         ICsvListReader listReader = null;
         try {
-            listReader = new CsvListReader(new FileReader("./out/production/FXChat-Client/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
+            listReader = new CsvListReader(new FileReader(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
 
             listReader.getHeader(true);
             final CellProcessor[] processors = getProcessors();
@@ -455,4 +507,63 @@ public class Message implements Initializable {
         }
     }
 
+    private boolean checkHistoryFile(User user) {
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), user.getId());
+        File history = new File(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH);
+        history.getParentFile().mkdirs();
+        return history.exists();
+    }
+
+    private void createHistoryFile() throws IOException {
+//        TODO: Create history file for this.currentFriend
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), currentFriend.getId());
+        File history = new File(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH);
+        history.createNewFile();
+    }
+
+    private void loadHistoryFile() throws IOException {
+//        TODO: Clear history file
+        dynamicFileList.getChildren().clear();
+
+//        TODO: Load downloaded file history for this.currentFriend
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), currentFriend.getId());
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH));
+        String filename;
+        while ((filename = bufferedReader.readLine()) != null) {
+//        TODO: call refreshFile(filename) to render open file button
+            refreshFile(filename);
+        }
+    }
+
+    private void refreshFile(String filename) {
+//        TODO: Render open file button in dynamicFileList
+        InputStream inputIcon = getClass().getResourceAsStream("/Resources/Images/download.png");
+        Image image = new Image(inputIcon);
+
+        ImageView showIcon = new ImageView(image);
+        showIcon.setFitHeight(20);
+        showIcon.setFitWidth(20);
+        JFXButton file = new JFXButton(filename, showIcon);
+
+//        TODO: setOnAction for button to open file
+        file.setOnAction(e -> {
+            try {
+                desktop.open(new File(getCurrentDir() + "/Resources/Download/".concat(filename)));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        file.setContentDisplay(ContentDisplay.LEFT);
+        file.setMinWidth(this.dynamicFileList.getPrefWidth());
+        file.setAlignment(Pos.BASELINE_LEFT);
+        this.dynamicFileList.getChildren().add(file);
+    }
+
+    private void appendHistoryFile(FileInfo fileInfo) throws IOException {
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), fileInfo.getSender().getId());
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH, true));
+        bufferedWriter.write(fileInfo.getFilename().concat("\n"));
+        bufferedWriter.close();
+    }
 }

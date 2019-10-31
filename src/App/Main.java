@@ -30,8 +30,8 @@ public class Main extends Application {
             e.printStackTrace();
         }
 
-        Parent root = FXMLLoader.load(getClass().getResource("../View/Login.fxml"));
-        Scene scene = new Scene(root, 600, 444);
+        Parent root = FXMLLoader.load(getClass().getResource("/View/Login.fxml"));
+        Scene scene = new Scene(root, 600, 500);
 
         primaryStage.setTitle("FX Chat");
         primaryStage.setScene(scene);

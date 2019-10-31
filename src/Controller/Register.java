@@ -108,8 +108,8 @@ public class Register implements Initializable {
     public void loginClick(ActionEvent actionEvent) throws IOException {
 //        TODO: switch scene to Login
 //        StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Login.fxml")));
-        FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("../View/Login.fxml"));
-        StageView.getStage().setScene(new Scene(loginLoader.load(), 600, 444));
+        FXMLLoader loginLoader = new FXMLLoader(getClass().getResource("/View/Login.fxml"));
+        StageView.getStage().setScene(new Scene(loginLoader.load(), 600, 500));
     }
 
     private void registerSuccess() {
@@ -119,7 +119,7 @@ public class Register implements Initializable {
         alert.setContentText("Username: \"" + Login.currentUser.getUsername() + "\" --- Nickname: \"" + Login.currentUser.getNickname() + "\"");
         alert.showAndWait();
         try {
-            StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Login.fxml")));
+            StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("/View/Login.fxml")));
         } catch (IOException e) {
             e.printStackTrace();
         }

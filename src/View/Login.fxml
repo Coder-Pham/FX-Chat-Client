@@ -11,15 +11,13 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="444.0"
-      prefWidth="600.0" stylesheets="@../Resources/Styles/global.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="Controller.Login">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="600.0" stylesheets="@../Resources/Styles/global.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.Login">
     <children>
         <HBox alignment="CENTER" prefHeight="170.0" prefWidth="600.0">
             <children>
                 <ImageView fitHeight="227.0" fitWidth="231.0" pickOnBounds="true" preserveRatio="true">
                     <image>
-                        <Image url="@../Resources/Images/Logo.png"/>
+                        <Image url="@../Resources/Images/Logo.png" />
                     </image>
                 </ImageView>
             </children>
@@ -28,17 +26,15 @@
             <children>
                 <VBox prefHeight="105.0" prefWidth="391.0">
                     <HBox.margin>
-                        <Insets left="105.0"/>
+                        <Insets left="105.0" />
                     </HBox.margin>
                     <children>
-                        <Label fx:id="userNameLabel" text="Username:"
-                               styleClass="same-label">
+                        <Label fx:id="userNameLabel" styleClass="same-label" text="Username:">
                             <VBox.margin>
-                                <Insets bottom="10.0"/>
+                                <Insets bottom="10.0" />
                             </VBox.margin>
                         </Label>
-                        <JFXTextField fx:id="username"
-                                      styleClass="same-label"/>
+                        <JFXTextField fx:id="username" styleClass="same-label" />
                     </children>
                 </VBox>
             </children>
@@ -47,48 +43,42 @@
             <children>
                 <VBox prefHeight="100.0" prefWidth="391.0">
                     <HBox.margin>
-                        <Insets left="105.0"/>
+                        <Insets left="105.0" />
                     </HBox.margin>
                     <children>
-                        <Label fx:id="passwordLabel" text="Password:"
-                               styleClass="same-label">
+                        <Label fx:id="passwordLabel" styleClass="same-label" text="Password:">
                             <VBox.margin>
-                                <Insets bottom="10.0" top="20.0"/>
+                                <Insets bottom="10.0" top="20.0" />
                             </VBox.margin>
                         </Label>
-                        <JFXPasswordField fx:id="password"/>
+                        <JFXPasswordField fx:id="password" />
                     </children>
                 </VBox>
             </children>
         </HBox>
-        <HBox alignment="TOP_RIGHT" prefHeight="54.0" prefWidth="600.0"/>
+        <HBox alignment="TOP_RIGHT" prefHeight="54.0" prefWidth="600.0" />
         <HBox alignment="TOP_RIGHT" prefHeight="84.0" prefWidth="600.0">
             <children>
-                <Label fx:id="error" textFill="RED"
-                       styleClass="same-label">
+                <Label fx:id="error" styleClass="same-label" textFill="RED">
                     <HBox.margin>
-                        <Insets right="10.0" top="11.0"/>
+                        <Insets right="10.0" top="11.0" />
                     </HBox.margin>
                 </Label>
-                <JFXButton fx:id="loginButton" onAction="#loginClick" prefHeight="45.0" prefWidth="78.0"
-                           styleClass="login-button" text="Login"
-                           textFill="WHITE">
+                <JFXButton fx:id="loginButton" defaultButton="true" onAction="#loginClick" prefHeight="46.0" prefWidth="100.0" styleClass="login-button" text="Login" textFill="WHITE">
                     <HBox.margin>
-                        <Insets right="105.0"/>
+                        <Insets right="105.0" />
                     </HBox.margin>
                     <font>
-                        <Font size="19.0"/>
+                        <Font size="19.0" />
                     </font>
                 </JFXButton>
             </children>
         </HBox>
         <HBox alignment="CENTER" prefHeight="123.0" prefWidth="600.0">
             <children>
-                <JFXButton fx:id="registerButton" prefHeight="50.0" prefWidth="120.0"
-                           styleClass="register-button" text="Register"
-                           textFill="WHITE" onAction="#registerClick">
+                <JFXButton fx:id="registerButton" onAction="#registerClick" prefHeight="50.0" prefWidth="120.0" styleClass="register-button" text="Register" textFill="WHITE">
                     <font>
-                        <Font size="22.0"/>
+                        <Font size="22.0" />
                     </font>
                 </JFXButton>
             </children>

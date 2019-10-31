@@ -64,7 +64,7 @@ public class Login implements Initializable {
             currentUser = (User) response.getData();
             System.out.println("Login Successful");
 
-            FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("../View/Message.fxml"));
+            FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("/View/Message.fxml"));
             StageView.getStage().setScene(new Scene(messageLoader.load(), 1000, 700));
         }
 //      TODO: If failed, reset scene
@@ -78,7 +78,7 @@ public class Login implements Initializable {
     public void registerClick(ActionEvent actionEvent) throws IOException {
 //        TODO: Switch Register scene
 //        StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("../View/Register.fxml")));
-        FXMLLoader registerLoader = new FXMLLoader(getClass().getResource("../View/Register.fxml"));
-        StageView.getStage().setScene(new Scene(registerLoader.load(), 600, 460));
+        FXMLLoader registerLoader = new FXMLLoader(getClass().getResource("/View/Register.fxml"));
+        StageView.getStage().setScene(new Scene(registerLoader.load(), 600, 500));
     }
 }
