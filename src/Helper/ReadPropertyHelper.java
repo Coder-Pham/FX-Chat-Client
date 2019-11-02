@@ -8,7 +8,7 @@ import java.util.Properties;
 public class ReadPropertyHelper {
     public static String getProperty(String propertyName)
     {
-        String propertyPath = System.getProperty("user.dir") + "/resources/config.properties";
+        String propertyPath = "resources/config.properties";
         try
         {
             InputStream input = new FileInputStream(propertyPath);

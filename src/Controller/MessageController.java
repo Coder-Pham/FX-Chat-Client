@@ -2,6 +2,7 @@ package Controller;
 
 import Connection.*;
 
+import Helper.MessageHistoryHelper;
 import Helper.ReadPropertyHelper;
 import Model.*;
 import com.jfoenix.controls.JFXButton;
@@ -67,9 +68,9 @@ public class MessageController implements Initializable {
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private User currentFriend = new User(-1, "", "", "");
-    private UserAddress currentFriendAddress = new UserAddress(new User(-1, "", "", ""),"127.0.0.1");
 
     //    P2P Section
+    public UserAddress currentFriendAddress = new UserAddress(new User(-1, "", "", ""),"127.0.0.1");
     public static Thread fxServerThread;
     public static Thread fxClientThread;
     public static ServerSocket fxServer;
@@ -85,10 +86,46 @@ public class MessageController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-//        TODO: Setup user information
+
+        // Render some custom components such as userOnlineList
+        this.initialRender();
+
+        // Attach the event key listener for textMessage
+        this.initialSetAction();
+
+        // Create threads for listening from server and other client
+        this.initialCreateThread();
+    }
+
+    private void initialRender()
+    {
+        // Setup user information
         chatArea.setDisable(true);
         userNickName.setText(LoginController.currentUser.getNickname());
-//        TODO: Request UOL
+
+        // Request UOL
+        this.requestAndLoadUOL();
+    }
+
+    private void initialSetAction()
+    {
+        // Set event (Enter key) listener for textMessage box
+        this.setKeyActionForTextMessage();
+    }
+
+    private void initialCreateThread()
+    {
+        //Create thread for listening to server
+        this.createServerListener();
+
+        // Create thread for listening to user who would like to connect
+        ClientListener clientListener = new ClientListener(Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),this);
+        Thread thread = new Thread(clientListener);
+        thread.start();
+    }
+
+    private void requestAndLoadUOL()
+    {
         Signal UOLRequest = new Signal(Action.UOL, true, new User(-1, "", "", ""), "");
         try {
             ServerHandler.getObjectOutputStream().writeObject(UOLRequest);
@@ -97,23 +134,15 @@ public class MessageController implements Initializable {
             Signal response = (Signal) ServerHandler.getObjectInputStream().readObject();
             if (response.getAction().equals(Action.UOL) && response.isStatus()) {
                 UserAddressList userAddressList = (UserAddressList) response.getData();
-//                System.out.println("hello" + userAddressList.toString());
-
-//                this.refreshUserList(filterUser(userAddressList.getUserAddresses());
                 this.refreshUserList(this.filterUserAddress(userAddressList.getUserAddresses()));
             }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+    }
 
-//        TODO: Start subThread for Listener
-        this.createServerListener();
-
-//        this.createFXServer();
-        ClientListener clientListener = new ClientListener(Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),this);
-        Thread thread = new Thread(clientListener);
-        thread.start();
-
+    private void setKeyActionForTextMessage()
+    {
         textMessage.setOnKeyPressed((event) -> {
             if(event.getCode() == KeyCode.ENTER) {
                 event.consume(); // otherwise a new line will be added to the textArea after the sendFunction() call
@@ -129,29 +158,20 @@ public class MessageController implements Initializable {
 //                    NOTE: When click to friend, already check to CSV
                     MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, text);
 //                    Signal request = new Signal(Action.MESSAGE, true, messageModel, "");
-                    try {
-                        appendHistoryMessage(messageModel);
-                        refreshMessage(messageModel);
+                    //appendHistoryMessage(messageModel);
+                    refreshMessage(messageModel);
 
-                        ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
-                                Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
-                                Action.MESSAGE,
-                                messageModel);
+                    ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
+                            Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
+                            Action.MESSAGE,
+                            messageModel);
 //                        this.talkTo(this.currentFriendAddress.getAddress(),messageModel);
 //                        ServerHandler.getObjectOutputStream().writeObject(request);
 //                        ServerHandler.getObjectOutputStream().flush();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
                     textMessage.setText("");
                 }
             }
         });
-    }
-
-    public void updateText(String string)
-    {
-        this.textMessage.setText(string);
     }
 
     public void createServerListener()
@@ -171,34 +191,34 @@ public class MessageController implements Initializable {
 
                                         refreshUserList(filterUserAddress(userAddressList.getUserAddresses()));
                                         break;
-                                    case MESSAGE:
-                                        MessageModel message = (MessageModel) response.getData();
-
-//                                        TODO: Check for history to read - write
-                                        try {
-                                            if (!checkHistory(message.getSender())) {
-                                                try {
-                                                    createHistoryMessage(message.getSender());
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                            }
-                                        } catch (UnsupportedEncodingException e) {
-                                            e.printStackTrace();
-                                        }
-
-                                        try {
-                                            if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
-                                                appendHistoryMessage(message);
-                                                refreshMessage(message);
-                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername())) {
-                                                appendHistoryMessage(message);
-                                                notification(message.getSender());
-                                            }
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                        break;
+//                                    case MESSAGE:
+//                                        MessageModel message = (MessageModel) response.getData();
+//
+////                                        TODO: Check for history to read - write
+//                                        try {
+//                                            if (!checkHistory(message.getSender())) {
+//                                                try {
+//                                                    createHistoryMessage(message.getSender());
+//                                                } catch (IOException e) {
+//                                                    e.printStackTrace();
+//                                                }
+//                                            }
+//                                        } catch (UnsupportedEncodingException e) {
+//                                            e.printStackTrace();
+//                                        }
+//
+//                                        try {
+//                                            if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
+////                                                appendHistoryMessage(message);
+//                                                refreshMessage(message);
+//                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername())) {
+////                                                appendHistoryMessage(message);
+//                                                notification(message.getSender());
+//                                            }
+//                                        } catch (IOException e) {
+//                                            e.printStackTrace();
+//                                        }
+//                                        break;
                                     case FILE:
                                         try {
                                             downFile((FileInfo) response.getData());
@@ -220,109 +240,6 @@ public class MessageController implements Initializable {
         });
 
         serverListener.start();
-
-    }
-
-    public void createFXServer()
-    {
-        System.out.println("Thread fxServer start");
-        MessageController.fxServerThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    MessageController.fxServer = new ServerSocket(1111);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                while (!shuttingDown.get()) {
-                    try {
-                        //Waiting for client socket connect to serversocket
-                        Socket client = MessageController.fxServer.accept();
-
-                        MessageController.currentClient = new Client(client,new ObjectOutputStream(client.getOutputStream()),new ObjectInputStream(client.getInputStream()));
-
-//                        System.out.println("A client just connect to our server");
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                    Client client = MessageController.currentClient;
-                                    //Read request object from client
-                                    Signal request = Signal.getRequest(client.getObjectInputStream());
-                                    if (request != null) {
-                                        switch (request.getAction()) {
-                                            case MESSAGE:
-                                                MessageModel message = (MessageModel) request.getData();
-
-//                                        TODO: Check for history to read - write
-                                                try {
-                                                    if (!checkHistory(message.getSender())) {
-                                                        try {
-                                                            createHistoryMessage(message.getSender());
-                                                        } catch (IOException e) {
-                                                            e.printStackTrace();
-                                                        }
-                                                    }
-                                                } catch (UnsupportedEncodingException e) {
-                                                    e.printStackTrace();
-                                                }
-
-                                                try {
-                                                    if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
-                                                        appendHistoryMessage(message);
-                                                        refreshMessage(message);
-                                                    } else if (!message.getSender().getUsername().equals(currentFriend.getUsername())) {
-                                                        appendHistoryMessage(message);
-                                                        notification(message.getSender());
-                                                    }
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                                break;
-                                            case FILE:
-                                                try {
-                                                    downFile((FileInfo) request.getData());
-                                                } catch (IOException e) {
-                                                    e.printStackTrace();
-                                                }
-                                                break;
-                                            default:
-                                                System.out.println("A client call to unknown function !!");
-                                        }
-                                    }
-                            }
-                        });
-                    } catch (IOException e) {
-//                        e.printStackTrace();
-                        break;
-                    }
-                }
-            }
-        });
-
-        MessageController.fxServerThread.start();
-    }
-
-    public void talkTo(String address, MessageModel messageModel)
-    {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                try{
-                    Socket socket = new Socket(address, 1111);
-                    ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-                    Signal request = new Signal(Action.MESSAGE,true,messageModel,"");
-                    Signal.sendResponse(request,objectOutputStream);
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    public void sendFileTo(String address, FileInfo fileInfo)
-    {
 
     }
 
@@ -437,14 +354,14 @@ public class MessageController implements Initializable {
 //                TODO: Alert file sent
                 MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, "INCOMING FILE: " + fileSend.getName());
                 request = new Signal(Action.MESSAGE, true, messageModel, "");
-                try {
-                    appendHistoryMessage(messageModel);
-                    refreshMessage(messageModel);
-                    ServerHandler.getObjectOutputStream().writeObject(request);
-                    ServerHandler.getObjectOutputStream().flush();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    appendHistoryMessage(messageModel);
+//                    refreshMessage(messageModel);
+//                    ServerHandler.getObjectOutputStream().writeObject(request);
+//                    ServerHandler.getObjectOutputStream().flush();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
             }
         }
     }
@@ -554,6 +471,15 @@ public class MessageController implements Initializable {
         messageContainer.getChildren().clear();
         clearNotification();
 
+        ArrayList<MessageModel> messageModels = MessageHistoryHelper.readMessageHistory(LoginController.currentUser,this.currentFriend);
+        if(messageModels.size() > 0)
+        {
+            for (int i = 0; i < messageModels.size(); i++)
+            {
+                this.refreshMessage(messageModels.get(i));
+            }
+        }
+
 
 //        if (checkHistory(this.currentFriend))
 //            loadHistoryMessage();
@@ -564,6 +490,7 @@ public class MessageController implements Initializable {
 //            loadHistoryFile();
 //        else
 //            createHistoryFile();
+        // Load history message
     }
 
     private void createHistoryMessage(User user) throws IOException {
@@ -607,54 +534,54 @@ public class MessageController implements Initializable {
         this.messageContainer.getChildren().add(containMessageButton);
     }
 
-    private void appendHistoryMessage(MessageModel msg) throws IOException {
-        String CSV_FILE_PATH;
-        if (msg.getSender().getId() == LoginController.currentUser.getId())
-            CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), msg.getReceiver().getId());
-        else
-            CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), msg.getSender().getId());
-        ICsvListWriter listWriter = null;
-        try {
-            listWriter = new CsvListWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
-
-            final CellProcessor[] processors = getProcessors();
-            final String[] header = new String[]{"User", "Message"};
-
-//            TODO: write message
-            listWriter.write(Arrays.asList(msg.getSender().getUsername(), msg.getContent()), processors);
-        } finally {
-            if (listWriter != null) {
-                listWriter.close();
-            }
-        }
-    }
+//    private void appendHistoryMessage(MessageModel msg) throws IOException {
+//        String CSV_FILE_PATH;
+//        if (msg.getSender().getId() == LoginController.currentUser.getId())
+//            CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), msg.getReceiver().getId());
+//        else
+//            CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), msg.getSender().getId());
+//        ICsvListWriter listWriter = null;
+//        try {
+//            listWriter = new CsvListWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
+//
+//            final CellProcessor[] processors = getProcessors();
+//            final String[] header = new String[]{"User", "Message"};
+//
+////            TODO: write message
+//            listWriter.write(Arrays.asList(msg.getSender().getUsername(), msg.getContent()), processors);
+//        } finally {
+//            if (listWriter != null) {
+//                listWriter.close();
+//            }
+//        }
+//    }
 
     @SuppressWarnings("resource")
-    private void loadHistoryMessage() throws IOException {
-        String CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), this.currentFriend.getId());
-        ICsvListReader listReader = null;
-        try {
-            listReader = new CsvListReader(new FileReader(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
-
-            listReader.getHeader(true);
-            final CellProcessor[] processors = getProcessors();
-
-            List<Object> messageList;
-            while ((messageList = listReader.read(processors)) != null){
-                if (messageList.get(0).equals(LoginController.currentUser.getUsername())) {
-                    MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, messageList.get(1).toString());
-                    refreshMessage(messageModel);
-                } else if (messageList.get(0).equals(this.currentFriend.getUsername())) {
-                    MessageModel messageModel = new MessageModel(this.currentFriend, LoginController.currentUser, messageList.get(1).toString());
-                    refreshMessage(messageModel);
-                }
-            }
-        } finally {
-            if (listReader != null){
-                listReader.close();
-            }
-        }
-    }
+//    private void loadHistoryMessage() throws IOException {
+//        String CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), this.currentFriend.getId());
+//        ICsvListReader listReader = null;
+//        try {
+//            listReader = new CsvListReader(new FileReader(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
+//
+//            listReader.getHeader(true);
+//            final CellProcessor[] processors = getProcessors();
+//
+//            List<Object> messageList;
+//            while ((messageList = listReader.read(processors)) != null){
+//                if (messageList.get(0).equals(LoginController.currentUser.getUsername())) {
+//                    MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, messageList.get(1).toString());
+//                    refreshMessage(messageModel);
+//                } else if (messageList.get(0).equals(this.currentFriend.getUsername())) {
+//                    MessageModel messageModel = new MessageModel(this.currentFriend, LoginController.currentUser, messageList.get(1).toString());
+//                    refreshMessage(messageModel);
+//                }
+//            }
+//        } finally {
+//            if (listReader != null){
+//                listReader.close();
+//            }
+//        }
+//    }
 
     private boolean checkHistoryFile(User user) {
         String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", LoginController.currentUser.getId(), user.getId());

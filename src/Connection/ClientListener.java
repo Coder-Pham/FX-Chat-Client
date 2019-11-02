@@ -67,7 +67,19 @@ public class ClientListener implements Runnable {
 
     private void handleMessageRequest(MessageModel messageModel)
     {
-        ClientListener.messageController.refreshMessage(messageModel);
+        // If we are talking directly to the sender
+        // we only need to refresh message + update chat history
+        if(ClientListener.messageController.currentFriendAddress.getUser().getUsername().equals(messageModel.getSender().getUsername()))
+        {
+            ClientListener.messageController.refreshMessage(messageModel);
+
+            //update chat history
+        }
+        //else we don't need to refresh message , just only update chat history
+        else
+        {
+            //update chat history
+        }
     }
 
     private void handleFileRequest(FileInfo fileInfo)
