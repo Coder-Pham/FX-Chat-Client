@@ -1,11 +1,11 @@
 package Connection;
 
-import Model.ServerIP;
-
+import Helper.ReadPropertyHelper;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Objects;
 
 public final class ServerHandler {
     private static Socket socket;
@@ -13,7 +13,7 @@ public final class ServerHandler {
     private static ObjectInputStream objectInputStream;
 
     public static void init() throws IOException {
-        socket = new Socket(ServerIP.hostname, ServerIP.port);
+        socket = new Socket(ReadPropertyHelper.getProperty("server_ip"), Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("server_port"))));
         objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
         objectInputStream = new ObjectInputStream(socket.getInputStream());
     }

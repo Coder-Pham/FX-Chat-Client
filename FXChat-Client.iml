@@ -7,28 +7,28 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library" exported="">
+    <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/src/Helper/jfoenix-8.0.8.jar!/" />
+          <root url="jar://$MODULE_DIR$/libs/fontawesomefx-8.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library" exported="">
+    <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/src/Helper/super-csv-2.4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/libs/jfoenix-8.0.8.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library" exported="">
+    <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/src/Helper/fontawesomefx-8.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/libs/super-csv-2.4.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

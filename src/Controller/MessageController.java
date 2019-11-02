@@ -1,9 +1,8 @@
 package Controller;
 
-import Connection.Action;
-import Connection.ServerHandler;
-import Connection.Signal;
+import Connection.*;
 
+import Helper.ReadPropertyHelper;
 import Model.*;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextArea;
@@ -30,7 +29,6 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,7 +42,7 @@ import org.supercsv.io.ICsvListReader;
 import org.supercsv.io.ICsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 
-public class Message implements Initializable {
+public class MessageController implements Initializable {
     @FXML
     private VBox dynamicUserOnlineList;
     @FXML
@@ -89,7 +87,7 @@ public class Message implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
 //        TODO: Setup user information
         chatArea.setDisable(true);
-        userNickName.setText(Login.currentUser.getNickname());
+        userNickName.setText(LoginController.currentUser.getNickname());
 //        TODO: Request UOL
         Signal UOLRequest = new Signal(Action.UOL, true, new User(-1, "", "", ""), "");
         try {
@@ -111,7 +109,10 @@ public class Message implements Initializable {
 //        TODO: Start subThread for Listener
         this.createServerListener();
 
-        this.createFXServer();
+//        this.createFXServer();
+        ClientListener clientListener = new ClientListener(Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),this);
+        Thread thread = new Thread(clientListener);
+        thread.start();
 
         textMessage.setOnKeyPressed((event) -> {
             if(event.getCode() == KeyCode.ENTER) {
@@ -126,12 +127,17 @@ public class Message implements Initializable {
 
 //                    TODO: Send message to Server - Write down CSV
 //                    NOTE: When click to friend, already check to CSV
-                    MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, text);
+                    MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, text);
 //                    Signal request = new Signal(Action.MESSAGE, true, messageModel, "");
                     try {
                         appendHistoryMessage(messageModel);
                         refreshMessage(messageModel);
-                        this.talkTo(this.currentFriendAddress.getAddress(),messageModel);
+
+                        ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
+                                Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
+                                Action.MESSAGE,
+                                messageModel);
+//                        this.talkTo(this.currentFriendAddress.getAddress(),messageModel);
 //                        ServerHandler.getObjectOutputStream().writeObject(request);
 //                        ServerHandler.getObjectOutputStream().flush();
                     } catch (IOException e) {
@@ -141,6 +147,11 @@ public class Message implements Initializable {
                 }
             }
         });
+    }
+
+    public void updateText(String string)
+    {
+        this.textMessage.setText(string);
     }
 
     public void createServerListener()
@@ -215,26 +226,26 @@ public class Message implements Initializable {
     public void createFXServer()
     {
         System.out.println("Thread fxServer start");
-        Message.fxServerThread = new Thread(new Runnable() {
+        MessageController.fxServerThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    Message.fxServer = new ServerSocket(1111);
+                    MessageController.fxServer = new ServerSocket(1111);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 while (!shuttingDown.get()) {
                     try {
                         //Waiting for client socket connect to serversocket
-                        Socket client = Message.fxServer.accept();
+                        Socket client = MessageController.fxServer.accept();
 
-                        Message.currentClient = new Client(client,new ObjectOutputStream(client.getOutputStream()),new ObjectInputStream(client.getInputStream()));
+                        MessageController.currentClient = new Client(client,new ObjectOutputStream(client.getOutputStream()),new ObjectInputStream(client.getInputStream()));
 
 //                        System.out.println("A client just connect to our server");
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
-                                    Client client = Message.currentClient;
+                                    Client client = MessageController.currentClient;
                                     //Read request object from client
                                     Signal request = Signal.getRequest(client.getObjectInputStream());
                                     if (request != null) {
@@ -288,7 +299,7 @@ public class Message implements Initializable {
             }
         });
 
-        Message.fxServerThread.start();
+        MessageController.fxServerThread.start();
     }
 
     public void talkTo(String address, MessageModel messageModel)
@@ -318,7 +329,7 @@ public class Message implements Initializable {
     @FXML
     public void logoutClick(ActionEvent actionEvent) throws IOException {
 //        TODO: Send Logout signal
-        Signal logoutRequest = new Signal(Action.LOGOUT, true, Login.currentUser, "");
+        Signal logoutRequest = new Signal(Action.LOGOUT, true, LoginController.currentUser, "");
         ServerHandler.getObjectOutputStream().writeObject(logoutRequest);
         ServerHandler.getObjectOutputStream().flush();
 
@@ -397,7 +408,7 @@ public class Message implements Initializable {
                 FileInfo fileInfo = null;
                 try {
                     bufferedInputStream = new BufferedInputStream(new FileInputStream(fileSend));
-                    fileInfo = new FileInfo(Login.currentUser, currentFriend, "", 0, new byte[]{});
+                    fileInfo = new FileInfo(LoginController.currentUser, currentFriend, "", 0, new byte[]{});
 
 //                TODO: Get File info
                     byte[] fileBytes = new byte[(int) fileSend.length()];
@@ -413,7 +424,7 @@ public class Message implements Initializable {
 
 //                TODO: Add FileInfo 2-end users
                 assert fileInfo != null;
-                fileInfo.setSender(Login.currentUser);
+                fileInfo.setSender(LoginController.currentUser);
                 fileInfo.setReceiver(currentFriend);
                 Signal request = new Signal(Action.FILE, true, fileInfo, "");
                 try {
@@ -424,7 +435,7 @@ public class Message implements Initializable {
                 }
 
 //                TODO: Alert file sent
-                MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, "INCOMING FILE: " + fileSend.getName());
+                MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, "INCOMING FILE: " + fileSend.getName());
                 request = new Signal(Action.MESSAGE, true, messageModel, "");
                 try {
                     appendHistoryMessage(messageModel);
@@ -474,7 +485,7 @@ public class Message implements Initializable {
         System.out.println(UOLList);
         int i = 0;
         while (i < UOLList.size())
-            if (UOLList.get(i).getId() == Login.currentUser.getId()) {
+            if (UOLList.get(i).getId() == LoginController.currentUser.getId()) {
                 UOLList.remove(i);
             }
             else
@@ -486,7 +497,7 @@ public class Message implements Initializable {
 //        System.out.println(userAddressArrayList);
         int i = 0;
         while (i < userAddressArrayList.size())
-            if (userAddressArrayList.get(i).getUser().getId() == Login.currentUser.getId()) {
+            if (userAddressArrayList.get(i).getUser().getId() == LoginController.currentUser.getId()) {
                 userAddressArrayList.remove(i);
             }
             else
@@ -522,13 +533,13 @@ public class Message implements Initializable {
     }
 
     private String getCurrentDir() {
-        URL jarLocationUrl = Message.class.getProtectionDomain().getCodeSource().getLocation();
+        URL jarLocationUrl = MessageController.class.getProtectionDomain().getCodeSource().getLocation();
         String jarLocation = new File(jarLocationUrl.toString()).getParent();
         return jarLocation.substring(6);
     }
 
     private boolean checkHistory(User user) throws UnsupportedEncodingException {
-        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), user.getId());
         File history = new File(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH);
         history.getParentFile().mkdirs();
         return history.exists();
@@ -544,19 +555,19 @@ public class Message implements Initializable {
         clearNotification();
 
 
-        if (checkHistory(this.currentFriend))
-            loadHistoryMessage();
-        else
-            createHistoryMessage(this.currentFriend);
-
-        if (checkHistoryFile(this.currentFriend))
-            loadHistoryFile();
-        else
-            createHistoryFile();
+//        if (checkHistory(this.currentFriend))
+//            loadHistoryMessage();
+//        else
+//            createHistoryMessage(this.currentFriend);
+//
+//        if (checkHistoryFile(this.currentFriend))
+//            loadHistoryFile();
+//        else
+//            createHistoryFile();
     }
 
     private void createHistoryMessage(User user) throws IOException {
-        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), user.getId());
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), user.getId());
         ICsvListWriter listWriter = null;
         try {
             listWriter = new CsvListWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
@@ -573,14 +584,14 @@ public class Message implements Initializable {
         }
     }
 
-    private void refreshMessage(MessageModel msg) {
+    public void refreshMessage(MessageModel msg) {
 //        TODO: Push message to scene
         JFXButton container = new JFXButton(msg.getContent());
         container.setContentDisplay(ContentDisplay.CENTER);
         container.setAlignment(Pos.BASELINE_CENTER);
         HBox containMessageButton = new HBox();
         containMessageButton.setMinWidth(this.messageContainer.getPrefWidth());
-        if (Login.currentUser.getUsername().equals(msg.getSender().getUsername())) {
+        if (LoginController.currentUser.getUsername().equals(msg.getSender().getUsername())) {
             container.setStyle("-fx-background-color: #4298FB; -fx-text-fill: white; -fx-max-width : 240px");
             container.setWrapText(true);
             containMessageButton.getChildren().add(container);
@@ -598,10 +609,10 @@ public class Message implements Initializable {
 
     private void appendHistoryMessage(MessageModel msg) throws IOException {
         String CSV_FILE_PATH;
-        if (msg.getSender().getId() == Login.currentUser.getId())
-            CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getReceiver().getId());
+        if (msg.getSender().getId() == LoginController.currentUser.getId())
+            CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), msg.getReceiver().getId());
         else
-            CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), msg.getSender().getId());
+            CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), msg.getSender().getId());
         ICsvListWriter listWriter = null;
         try {
             listWriter = new CsvListWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
@@ -620,7 +631,7 @@ public class Message implements Initializable {
 
     @SuppressWarnings("resource")
     private void loadHistoryMessage() throws IOException {
-        String CSV_FILE_PATH = String.format("%d-%d-message.csv", Login.currentUser.getId(), this.currentFriend.getId());
+        String CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), this.currentFriend.getId());
         ICsvListReader listReader = null;
         try {
             listReader = new CsvListReader(new FileReader(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
@@ -630,11 +641,11 @@ public class Message implements Initializable {
 
             List<Object> messageList;
             while ((messageList = listReader.read(processors)) != null){
-                if (messageList.get(0).equals(Login.currentUser.getUsername())) {
-                    MessageModel messageModel = new MessageModel(Login.currentUser, this.currentFriend, messageList.get(1).toString());
+                if (messageList.get(0).equals(LoginController.currentUser.getUsername())) {
+                    MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, messageList.get(1).toString());
                     refreshMessage(messageModel);
                 } else if (messageList.get(0).equals(this.currentFriend.getUsername())) {
-                    MessageModel messageModel = new MessageModel(this.currentFriend, Login.currentUser, messageList.get(1).toString());
+                    MessageModel messageModel = new MessageModel(this.currentFriend, LoginController.currentUser, messageList.get(1).toString());
                     refreshMessage(messageModel);
                 }
             }
@@ -646,7 +657,7 @@ public class Message implements Initializable {
     }
 
     private boolean checkHistoryFile(User user) {
-        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), user.getId());
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", LoginController.currentUser.getId(), user.getId());
         File history = new File(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH);
         history.getParentFile().mkdirs();
         return history.exists();
@@ -654,7 +665,7 @@ public class Message implements Initializable {
 
     private void createHistoryFile() throws IOException {
 //        TODO: Create history file for this.currentFriend
-        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), currentFriend.getId());
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", LoginController.currentUser.getId(), currentFriend.getId());
         File history = new File(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH);
         history.createNewFile();
     }
@@ -664,7 +675,7 @@ public class Message implements Initializable {
         dynamicFileList.getChildren().clear();
 
 //        TODO: Load downloaded file history for this.currentFriend
-        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), currentFriend.getId());
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", LoginController.currentUser.getId(), currentFriend.getId());
         BufferedReader bufferedReader = new BufferedReader(new FileReader(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH));
         String filename;
         while ((filename = bufferedReader.readLine()) != null) {
@@ -699,7 +710,7 @@ public class Message implements Initializable {
     }
 
     private void appendHistoryFile(FileInfo fileInfo) throws IOException {
-        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", Login.currentUser.getId(), fileInfo.getSender().getId());
+        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", LoginController.currentUser.getId(), fileInfo.getSender().getId());
         BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH, true));
         bufferedWriter.write(fileInfo.getFilename().concat("\n"));
         bufferedWriter.close();

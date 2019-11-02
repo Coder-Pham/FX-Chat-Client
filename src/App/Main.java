@@ -3,7 +3,7 @@ package App;
 import Connection.Action;
 import Connection.ServerHandler;
 import Connection.Signal;
-import Controller.Login;
+import Controller.LoginController;
 import Model.StageView;
 
 import javafx.application.Application;
@@ -42,7 +42,7 @@ public class Main extends Application {
 
         primaryStage.setOnCloseRequest( event ->
         {
-            Signal request = new Signal(Action.LOGOUT, true, Login.currentUser, "");
+            Signal request = new Signal(Action.LOGOUT, true, LoginController.currentUser, "");
             try {
                 ServerHandler.getObjectOutputStream().writeObject(request);
                 ServerHandler.getObjectOutputStream().flush();

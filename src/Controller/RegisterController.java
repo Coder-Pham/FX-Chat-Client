@@ -8,25 +8,19 @@ import Model.User;
 
 import com.jfoenix.controls.*;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.StackPane;
-import javafx.scene.text.Text;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
-public class Register implements Initializable {
+public class RegisterController implements Initializable {
     @FXML
     private JFXTextField username;
     @FXML
@@ -92,7 +86,7 @@ public class Register implements Initializable {
 
 //      TODO: If successful register, then create new Stage - Scene for main
         if (response.isStatus()) {
-            Login.currentUser = (User) response.getData();
+            LoginController.currentUser = (User) response.getData();
             System.out.println("Register Successful");
 
             this.registerSuccess();
@@ -116,7 +110,7 @@ public class Register implements Initializable {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Register Success");
         alert.setHeaderText("Now you can login with:");
-        alert.setContentText("Username: \"" + Login.currentUser.getUsername() + "\" --- Nickname: \"" + Login.currentUser.getNickname() + "\"");
+        alert.setContentText("Username: \"" + LoginController.currentUser.getUsername() + "\" --- Nickname: \"" + LoginController.currentUser.getNickname() + "\"");
         alert.showAndWait();
         try {
             StageView.getStage().getScene().setRoot(FXMLLoader.load(getClass().getResource("/View/Login.fxml")));
