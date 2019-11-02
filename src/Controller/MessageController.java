@@ -157,17 +157,14 @@ public class MessageController implements Initializable {
 //                    TODO: Send message to Server - Write down CSV
 //                    NOTE: When click to friend, already check to CSV
                     MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, text);
-//                    Signal request = new Signal(Action.MESSAGE, true, messageModel, "");
-                    //appendHistoryMessage(messageModel);
+                    MessageHistoryHelper.writeMessageHistory(messageModel.getSender(), messageModel.getReceiver(), messageModel);
                     refreshMessage(messageModel);
 
                     ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
                             Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
                             Action.MESSAGE,
                             messageModel);
-//                        this.talkTo(this.currentFriendAddress.getAddress(),messageModel);
-//                        ServerHandler.getObjectOutputStream().writeObject(request);
-//                        ServerHandler.getObjectOutputStream().flush();
+
                     textMessage.setText("");
                 }
             }

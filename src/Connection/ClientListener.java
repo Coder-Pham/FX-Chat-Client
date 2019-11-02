@@ -1,6 +1,8 @@
 package Connection;
 
+import Controller.LoginController;
 import Controller.MessageController;
+import Helper.MessageHistoryHelper;
 import Model.Client;
 import Model.FileInfo;
 import Model.MessageModel;
@@ -74,11 +76,13 @@ public class ClientListener implements Runnable {
             ClientListener.messageController.refreshMessage(messageModel);
 
             //update chat history
+            MessageHistoryHelper.writeMessageHistory(messageModel.getReceiver(), messageModel.getSender(), messageModel);
         }
         //else we don't need to refresh message , just only update chat history
         else
         {
             //update chat history
+            MessageHistoryHelper.writeMessageHistory(messageModel.getReceiver(), messageModel.getSender(), messageModel);
         }
     }
 
