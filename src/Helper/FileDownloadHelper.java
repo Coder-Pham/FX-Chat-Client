@@ -6,7 +6,7 @@ import java.io.*;
 
 public class FileDownloadHelper {
     private static String directory = "download/";
-    public static String absolutePath = System.getProperty("user.dir").concat(directory);
+    public static String absolutePath = System.getProperty("user.dir").concat("/").concat(directory);
 
     public static void storeFile(FileInfo fileInfo)
     {

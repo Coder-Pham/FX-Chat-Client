@@ -3,6 +3,7 @@
 <?import com.jfoenix.controls.JFXButton?>
 <?import com.jfoenix.controls.JFXTextArea?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
@@ -73,8 +74,7 @@
                         </HBox>
                         <ScrollPane fx:id="messageScrollArea" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" prefHeight="693.0" prefWidth="226.0" style="-fx-box-border: transparent;" VBox.vgrow="NEVER">
                      <content>
-                         <VBox fx:id="messageContainer" minHeight="-Infinity" minWidth="-Infinity" prefWidth="450.0"
-                               style="-fx-background-color: white;"/>
+                         <VBox fx:id="messageContainer" minHeight="-Infinity" minWidth="-Infinity" prefWidth="450.0" style="-fx-background-color: white;" />
                      </content>
                   </ScrollPane>
                         <HBox fx:id="chatArea" prefHeight="0.0" prefWidth="399.0">
@@ -86,12 +86,15 @@
                                 </JFXTextArea>
                                 <JFXButton fx:id="fileIcon" ellipsisString="" onMouseClicked="#upFile">
                            <graphic>
-                                      <ImageView fitHeight="39.0" fitWidth="39.0" pickOnBounds="true" preserveRatio="true">
+                                      <ImageView fitHeight="39.0" fitWidth="39.0" pickOnBounds="true" preserveRatio="true" styleClass="choose-file">
                                           <image>
                                               <Image url="@../Resources/Images/FileIcon.png" />
                                           </image>
                                       </ImageView>
                            </graphic>
+                           <cursor>
+                              <Cursor fx:constant="HAND" />
+                           </cursor>
                         </JFXButton>
                             </children>
                         </HBox>
@@ -118,10 +121,9 @@
                                         </Label>
                                     </children>
                                 </HBox>
-                                <ScrollPane fx:id="DownladFileList" fitToWidth="true" hbarPolicy="NEVER" pannable="true"
-                                            prefHeight="500.0" prefWidth="225.0" style="-fx-box-border: transparent;">
+                                <ScrollPane fx:id="DownladFileList" fitToWidth="true" hbarPolicy="NEVER" pannable="true" prefHeight="500.0" prefWidth="225.0" style="-fx-box-border: transparent;">
                                     <content>
-                                        <VBox fx:id="dynamicFileList" alignment="CENTER_RIGHT" prefWidth="225.0"/>
+                                        <VBox fx:id="dynamicFileList" alignment="CENTER_RIGHT" prefWidth="225.0" />
                                     </content>
                                 </ScrollPane>
                             </children>

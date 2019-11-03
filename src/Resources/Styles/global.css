@@ -9,7 +9,23 @@
     -fx-background-color: #60A526;
 }
 
+.login-button:hover{
+    -fx-cursor: hand;
+}
+
 .register-button{
     -fx-background-radius: 8;
     -fx-background-color: #014EF2;
+}
+
+.register-button:hover{
+    -fx-cursor: hand;
+}
+
+.choose-friend:hover{
+    -fx-cursor: hand;
+}
+
+.open-file:hover{
+    -fx-cursor: hand;
 }

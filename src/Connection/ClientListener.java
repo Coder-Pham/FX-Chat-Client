@@ -1,6 +1,5 @@
 package Connection;
 
-import Controller.LoginController;
 import Controller.MessageController;
 import Helper.FileDownloadHelper;
 import Helper.FileHistoryHelper;
@@ -85,6 +84,9 @@ public class ClientListener implements Runnable {
         {
             //update chat history
             MessageHistoryHelper.writeMessageHistory(messageModel.getReceiver(), messageModel.getSender(), messageModel);
+
+            // Notice to the user
+            ClientListener.messageController.notification(messageModel.getSender());
         }
     }
 
@@ -107,6 +109,8 @@ public class ClientListener implements Runnable {
             FileDownloadHelper.storeFile(fileInfo);
             // Write file history
             FileHistoryHelper.writeFileHistory(fileInfo.getReceiver(),fileInfo.getSender(),fileInfo);
+            // Notice to the user
+            ClientListener.messageController.notification(fileInfo.getSender());
         }
     }
 }

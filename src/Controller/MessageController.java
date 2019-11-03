@@ -159,8 +159,8 @@ public class MessageController implements Initializable {
 //                    TODO: Send message to Server - Write down CSV
 //                    NOTE: When click to friend, already check to CSV
                     MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, text);
-                    MessageHistoryHelper.writeMessageHistory(messageModel.getSender(), messageModel.getReceiver(), messageModel);
                     refreshMessage(messageModel);
+                    MessageHistoryHelper.writeMessageHistory(messageModel.getSender(), messageModel.getReceiver(), messageModel);
 
                     ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
                             Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
@@ -173,7 +173,105 @@ public class MessageController implements Initializable {
         });
     }
 
-    public void createServerListener()
+    @FXML
+    public void logoutClick(ActionEvent actionEvent) throws IOException {
+//        TODO: Send Logout signal
+        Signal logoutRequest = new Signal(Action.LOGOUT, true, LoginController.currentUser, "");
+        ServerHandler.getObjectOutputStream().writeObject(logoutRequest);
+        ServerHandler.getObjectOutputStream().flush();
+
+//        TODO: Force stop Listener thread
+        serverListener.interrupt();
+        shuttingDown.set(true);
+
+//        TODO: Switch back to login scene
+        try {
+            ServerHandler.init();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("/View/Login.fxml"));
+        StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 500));
+    }
+
+    @FXML
+    public void upFile(MouseEvent actionEvent) {
+        final FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Files");
+        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("All Files", "*.*"));
+
+        File file = fileChooser.showOpenDialog(StageView.getStage());
+        if (file != null) {
+            List<File> files = Arrays.asList(file);
+
+//            TODO: From files.get(i).getAbsolutePath() -> Convert to byte -> Send FileInfo
+            for (File fileSend : files) {
+                BufferedInputStream bufferedInputStream = null;
+                FileInfo fileInfo = null;
+                try {
+                    bufferedInputStream = new BufferedInputStream(new FileInputStream(fileSend));
+                    fileInfo = new FileInfo(LoginController.currentUser, currentFriend, "", 0, new byte[]{});
+
+//                TODO: Get File info
+                    byte[] fileBytes = new byte[(int) fileSend.length()];
+                    bufferedInputStream.read(fileBytes, 0, fileBytes.length);
+                    fileInfo.setFilename(fileSend.getName());
+                    fileInfo.setDataBytes(fileBytes);
+                    fileInfo.setFileSize(fileSend.length());
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                } finally {
+                    FileDownloadHelper.closeStream(bufferedInputStream);
+                }
+
+//                TODO: Add FileInfo 2-end users
+                assert fileInfo != null;
+                fileInfo.setSender(LoginController.currentUser);
+                fileInfo.setReceiver(currentFriend);
+
+                ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
+                        Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
+                        Action.FILE,
+                        fileInfo);
+
+//                TODO: Alert file sent
+                MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, "INCOMING FILE: " + fileSend.getName());
+                ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
+                        Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
+                        Action.MESSAGE,
+                        messageModel);
+
+                this.refreshMessage(messageModel);
+                MessageHistoryHelper.writeMessageHistory(LoginController.currentUser, this.currentFriend, messageModel);
+            }
+        }
+    }
+
+    public void refreshMessage(MessageModel msg) {
+//        TODO: Push message to scene
+        JFXButton container = new JFXButton(msg.getContent());
+        container.setContentDisplay(ContentDisplay.CENTER);
+        container.setAlignment(Pos.BASELINE_CENTER);
+        HBox containMessageButton = new HBox();
+        containMessageButton.setMinWidth(this.messageContainer.getPrefWidth());
+        if (LoginController.currentUser.getUsername().equals(msg.getSender().getUsername())) {
+            container.setStyle("-fx-background-color: #4298FB; -fx-text-fill: white; -fx-max-width : 240px");
+            container.setWrapText(true);
+            containMessageButton.getChildren().add(container);
+            containMessageButton.setAlignment(Pos.BASELINE_LEFT);
+            HBox.setMargin(container, new Insets(0, 0, 5, 3));
+        } else {
+            container.setStyle("-fx-background-color: #F1EFF0; -fx-text-fill: black; -fx-max-width : 240px");
+            container.setWrapText(true);
+            containMessageButton.getChildren().add(container);
+            containMessageButton.setAlignment(Pos.BASELINE_RIGHT);
+            HBox.setMargin(container, new Insets(0, 3, 5, 0));
+        }
+        this.messageContainer.getChildren().add(containMessageButton);
+    }
+
+    private void createServerListener()
     {
         serverListener = new Thread(new Runnable() {
             @Override
@@ -242,29 +340,7 @@ public class MessageController implements Initializable {
 
     }
 
-    @FXML
-    public void logoutClick(ActionEvent actionEvent) throws IOException {
-//        TODO: Send Logout signal
-        Signal logoutRequest = new Signal(Action.LOGOUT, true, LoginController.currentUser, "");
-        ServerHandler.getObjectOutputStream().writeObject(logoutRequest);
-        ServerHandler.getObjectOutputStream().flush();
-
-//        TODO: Force stop Listener thread
-        serverListener.interrupt();
-        shuttingDown.set(true);
-
-//        TODO: Switch back to login scene
-        try {
-            ServerHandler.init();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        FXMLLoader messageLoader = new FXMLLoader(getClass().getResource("/View/Login.fxml"));
-        StageView.getStage().setScene(new Scene(messageLoader.load(), 600, 500));
-    }
-
-    private void notification(User sender) {
+    public void notification(User sender) {
         for (int i = 0; i < dynamicUserOnlineList.getChildren().size(); i++) {
             JFXButton friend = (JFXButton) dynamicUserOnlineList.getChildren().get(i);
             if (friend.getText().equals(sender.getUsername())) {
@@ -286,91 +362,6 @@ public class MessageController implements Initializable {
                 break;
             }
         }
-    }
-
-    @FXML
-    public void upFile(MouseEvent actionEvent) {
-        final FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Select Files");
-        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("All Files", "*.*"));
-
-        File file = fileChooser.showOpenDialog(StageView.getStage());
-        if (file != null) {
-            List<File> files = Arrays.asList(file);
-
-//            TODO: From files.get(i).getAbsolutePath() -> Convert to byte -> Send FileInfo
-            for (File fileSend : files) {
-                BufferedInputStream bufferedInputStream = null;
-                FileInfo fileInfo = null;
-                try {
-                    bufferedInputStream = new BufferedInputStream(new FileInputStream(fileSend));
-                    fileInfo = new FileInfo(LoginController.currentUser, currentFriend, "", 0, new byte[]{});
-
-//                TODO: Get File info
-                    byte[] fileBytes = new byte[(int) fileSend.length()];
-                    bufferedInputStream.read(fileBytes, 0, fileBytes.length);
-                    fileInfo.setFilename(fileSend.getName());
-                    fileInfo.setDataBytes(fileBytes);
-                    fileInfo.setFileSize(fileSend.length());
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                } finally {
-                    FileDownloadHelper.closeStream(bufferedInputStream);
-                }
-
-//                TODO: Add FileInfo 2-end users
-                assert fileInfo != null;
-                fileInfo.setSender(LoginController.currentUser);
-                fileInfo.setReceiver(currentFriend);
-
-                ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
-                        Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
-                        Action.FILE,
-                        fileInfo);
-
-//                TODO: Alert file sent
-                MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, "INCOMING FILE: " + fileSend.getName());
-                ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
-                        Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
-                        Action.MESSAGE,
-                        messageModel);
-
-                this.refreshMessage(messageModel);
-                MessageHistoryHelper.writeMessageHistory(LoginController.currentUser, this.currentFriend, messageModel);
-            }
-        }
-    }
-
-    private boolean downFile(FileInfo fileInfo) throws IOException {
-//        BufferedOutputStream bufferedOutputStream = null;
-//
-////        TODO: Check Download folder exist
-//        File directory = new File(getCurrentDir() + "/Resources/Download");
-//        if (!directory.exists())
-//            directory.mkdir();
-//
-////        TODO: Download file
-//        try {
-//            if (fileInfo != null) {
-//                File fileReceive = new File(getCurrentDir() + "/Resources/Download/".concat(fileInfo.getFilename()));
-//                bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileReceive));
-//                bufferedOutputStream.write(fileInfo.getDataBytes());
-//                bufferedOutputStream.flush();
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return false;
-//        } finally {
-//            closeStream(bufferedOutputStream);
-//        }
-
-////        TODO: Write filename to HISTORY FILE
-//        assert fileInfo != null;
-//        appendHistoryFile(fileInfo);
-//        if (currentFriend.getId() == fileInfo.getSender().getId())
-////            refreshFile(fileInfo.getFilename());
-
-        return true;
     }
 
     private ArrayList<User> filterUser(ArrayList<User> UOLList) {
@@ -395,46 +386,6 @@ public class MessageController implements Initializable {
             else
                 i++;
         return userAddressArrayList;
-    }
-
-    private void refreshUserList(ArrayList<UserAddress> lst) {
-//        TODO: Refresh online users list
-        InputStream inputIcon = getClass().getResourceAsStream("/Resources/Images/Online.png");
-        Image image = new Image(inputIcon);
-        this.dynamicUserOnlineList.getChildren().clear();
-
-        for (int i = 0; i < lst.size(); i++) {
-            ImageView showIcon = new ImageView(image);
-            showIcon.setFitHeight(10);
-            showIcon.setFitWidth(10);
-            JFXButton user = new JFXButton(lst.get(i).getUser().getUsername(), showIcon);
-
-            int userID = i;
-            user.setOnAction(e -> {
-                try {
-                    connectFriend(lst.get(userID));
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            });
-            user.setContentDisplay(ContentDisplay.RIGHT);
-            user.setMinWidth(this.dynamicUserOnlineList.getPrefWidth());
-            user.setAlignment(Pos.BASELINE_RIGHT);
-            this.dynamicUserOnlineList.getChildren().add(i, user);
-        }
-    }
-
-    private String getCurrentDir() {
-        URL jarLocationUrl = MessageController.class.getProtectionDomain().getCodeSource().getLocation();
-        String jarLocation = new File(jarLocationUrl.toString()).getParent();
-        return jarLocation.substring(6);
-    }
-
-    private boolean checkHistory(User user) throws UnsupportedEncodingException {
-        String CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), user.getId());
-        File history = new File(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH);
-        history.getParentFile().mkdirs();
-        return history.exists();
     }
 
     private void connectFriend(UserAddress userAddress) throws IOException {
@@ -466,55 +417,31 @@ public class MessageController implements Initializable {
         }
     }
 
-    public void refreshMessage(MessageModel msg) {
-//        TODO: Push message to scene
-        JFXButton container = new JFXButton(msg.getContent());
-        container.setContentDisplay(ContentDisplay.CENTER);
-        container.setAlignment(Pos.BASELINE_CENTER);
-        HBox containMessageButton = new HBox();
-        containMessageButton.setMinWidth(this.messageContainer.getPrefWidth());
-        if (LoginController.currentUser.getUsername().equals(msg.getSender().getUsername())) {
-            container.setStyle("-fx-background-color: #4298FB; -fx-text-fill: white; -fx-max-width : 240px");
-            container.setWrapText(true);
-            containMessageButton.getChildren().add(container);
-            containMessageButton.setAlignment(Pos.BASELINE_LEFT);
-            HBox.setMargin(container, new Insets(0, 0, 5, 3));
-        } else {
-            container.setStyle("-fx-background-color: #F1EFF0; -fx-text-fill: black; -fx-max-width : 240px");
-            container.setWrapText(true);
-            containMessageButton.getChildren().add(container);
-            containMessageButton.setAlignment(Pos.BASELINE_RIGHT);
-            HBox.setMargin(container, new Insets(0, 3, 5, 0));
-        }
-        this.messageContainer.getChildren().add(containMessageButton);
-    }
+    private void refreshUserList(ArrayList<UserAddress> lst) {
+//        TODO: Refresh online users list
+        InputStream inputIcon = getClass().getResourceAsStream("/Resources/Images/Online.png");
+        Image image = new Image(inputIcon);
+        this.dynamicUserOnlineList.getChildren().clear();
 
-    @SuppressWarnings("resource")
-    private boolean checkHistoryFile(User user) {
-        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", LoginController.currentUser.getId(), user.getId());
-        File history = new File(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH);
-        history.getParentFile().mkdirs();
-        return history.exists();
-    }
+        for (int i = 0; i < lst.size(); i++) {
+            ImageView showIcon = new ImageView(image);
+            showIcon.setFitHeight(10);
+            showIcon.setFitWidth(10);
+            JFXButton user = new JFXButton(lst.get(i).getUser().getUsername(), showIcon);
 
-    private void createHistoryFile() throws IOException {
-//        TODO: Create history file for this.currentFriend
-        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", LoginController.currentUser.getId(), currentFriend.getId());
-        File history = new File(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH);
-        history.createNewFile();
-    }
-
-    private void loadHistoryFile() throws IOException {
-//        TODO: Clear history file
-        dynamicFileList.getChildren().clear();
-
-//        TODO: Load downloaded file history for this.currentFriend
-        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", LoginController.currentUser.getId(), currentFriend.getId());
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH));
-        String filename;
-        while ((filename = bufferedReader.readLine()) != null) {
-//        TODO: call refreshFile(filename) to render open file button
-//            refreshFile(filename);
+            int userID = i;
+            user.setOnAction(e -> {
+                try {
+                    connectFriend(lst.get(userID));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
+            user.setContentDisplay(ContentDisplay.RIGHT);
+            user.setMinWidth(this.dynamicUserOnlineList.getPrefWidth());
+            user.setAlignment(Pos.BASELINE_RIGHT);
+            user.getStyleClass().add("choose-friend");
+            this.dynamicUserOnlineList.getChildren().add(i, user);
         }
     }
 
@@ -540,13 +467,7 @@ public class MessageController implements Initializable {
         file.setContentDisplay(ContentDisplay.LEFT);
         file.setMinWidth(this.dynamicFileList.getPrefWidth());
         file.setAlignment(Pos.BASELINE_LEFT);
+        file.getStyleClass().add("open-file");
         this.dynamicFileList.getChildren().add(file);
-    }
-
-    private void appendHistoryFile(FileInfo fileInfo) throws IOException {
-        String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", LoginController.currentUser.getId(), fileInfo.getSender().getId());
-        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH, true));
-        bufferedWriter.write(fileInfo.getFilename().concat("\n"));
-        bufferedWriter.close();
     }
 }
