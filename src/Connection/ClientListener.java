@@ -2,6 +2,8 @@ package Connection;
 
 import Controller.LoginController;
 import Controller.MessageController;
+import Helper.FileDownloadHelper;
+import Helper.FileHistoryHelper;
 import Helper.MessageHistoryHelper;
 import Model.Client;
 import Model.FileInfo;
@@ -88,6 +90,23 @@ public class ClientListener implements Runnable {
 
     private void handleFileRequest(FileInfo fileInfo)
     {
+        // We have to refresh fileList if we are talking directly to sender
+        if(ClientListener.messageController.currentFriendAddress.getUser().getUsername().equals(fileInfo.getSender().getUsername()))
+        {
+            ClientListener.messageController.refreshFile(fileInfo.getFilename(),FileDownloadHelper.absolutePath.concat(fileInfo.getFilename()));
 
+            // Save file into directory
+            FileDownloadHelper.storeFile(fileInfo);
+            // Write file history
+            FileHistoryHelper.writeFileHistory(fileInfo.getReceiver(),fileInfo.getSender(),fileInfo);
+        }
+        // else we just need store the file and write to file history
+        else
+        {
+            // Save file into directory
+            FileDownloadHelper.storeFile(fileInfo);
+            // Write file history
+            FileHistoryHelper.writeFileHistory(fileInfo.getReceiver(),fileInfo.getSender(),fileInfo);
+        }
     }
 }

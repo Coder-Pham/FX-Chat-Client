@@ -1,6 +1,6 @@
 package Helper;
 
-import Model.MessageModel;
+import Model.FileInfo;
 import Model.User;
 import org.supercsv.cellprocessor.constraint.NotNull;
 import org.supercsv.cellprocessor.ift.CellProcessor;
@@ -16,44 +16,44 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
-public class MessageHistoryHelper {
-    private static String directory = "history/message/";
-    private static String path = MessageHistoryHelper.directory.concat("%d-%d-message.csv");
+public class FileHistoryHelper {
+    private static String directory = "history/file/";
+    private static String path = FileHistoryHelper.directory.concat("%d-%d-file.csv");
 
     private static CellProcessor[] getProcessors() {
         final CellProcessor[] processors = new CellProcessor[] {
-                new NotNull(), // Nickname
-                new NotNull(), // Message
+                new NotNull(), // File name
+                new NotNull(), // Path
         };
         return processors;
     }
 
-    public static void writeMessageHistory(User user, User friend, MessageModel messageModel)
+    public static void writeFileHistory(User user, User friend, FileInfo fileInfo)
     {
-        String CSV_FILE_PATH = String.format(MessageHistoryHelper.path, user.getId(), friend.getId());
+        String CSV_FILE_PATH = String.format(FileHistoryHelper.path, user.getId(), friend.getId());
 
         if(Files.exists(Paths.get(CSV_FILE_PATH)))
         {
-            MessageHistoryHelper.appendMessageHistory(user, friend, messageModel);
+            FileHistoryHelper.appendFileHistory(user, friend, fileInfo);
         }
         else
         {
             System.out.println("History file not found. Creating new history file");
-            MessageHistoryHelper.newMessageHistory(user, friend);
-            MessageHistoryHelper.appendMessageHistory(user, friend, messageModel);
+            FileHistoryHelper.newFileHistory(user, friend);
+            FileHistoryHelper.appendFileHistory(user, friend, fileInfo);
         }
 
     }
 
-    public static ArrayList<MessageModel> readMessageHistory(User user, User friend)
+    public static HashMap<String, String> readFileHistory(User user, User friend)
     {
-        String CSV_FILE_PATH = String.format(MessageHistoryHelper.path, user.getId(), friend.getId());
+        String CSV_FILE_PATH = String.format(FileHistoryHelper.path, user.getId(), friend.getId());
         ICsvListReader listReader = null;
-        ArrayList<MessageModel> messageModels = new ArrayList<MessageModel>();
+        HashMap<String, String> resultFileList = new HashMap<>();
 
         if(Files.exists(Paths.get(CSV_FILE_PATH)))
         {
@@ -65,15 +65,9 @@ public class MessageHistoryHelper {
                     listReader.getHeader(true);
                     final CellProcessor[] processors = getProcessors();
 
-                    List<Object> messageList;
-                    while ((messageList = listReader.read(processors)) != null){
-                        if (messageList.get(0).equals(user.getUsername())) {
-                            MessageModel messageModel = new MessageModel(user, friend, messageList.get(1).toString());
-                            messageModels.add(messageModel);
-                        } else if (messageList.get(0).equals(friend.getUsername())) {
-                            MessageModel messageModel = new MessageModel(friend, user, messageList.get(1).toString());
-                            messageModels.add(messageModel);
-                        }
+                    List<Object> fileList;
+                    while ((fileList = listReader.read(processors)) != null){
+                        resultFileList.put((String) fileList.get(0), (String) fileList.get(1));
                     }
                 }
                 finally {
@@ -91,18 +85,18 @@ public class MessageHistoryHelper {
         {
             System.out.println("History file not found");
         }
-        return messageModels;
+        return resultFileList;
     }
 
-    private static void newMessageHistory(User user, User friend)
+    private static void newFileHistory(User user, User friend)
     {
-        File directory = new File(MessageHistoryHelper.directory);
+        File directory = new File(FileHistoryHelper.directory);
         if (!directory.exists())
         {
             directory.mkdirs();
         }
 
-        String CSV_FILE_PATH = String.format(MessageHistoryHelper.path, user.getId(), friend.getId());
+        String CSV_FILE_PATH = String.format(FileHistoryHelper.path, user.getId(), friend.getId());
         ICsvListWriter listWriter = null;
 
         try
@@ -111,7 +105,7 @@ public class MessageHistoryHelper {
                 listWriter = new CsvListWriter(new FileWriter(CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
 
                 final CellProcessor[] processors = getProcessors();
-                final String[] header = new String[]{"User", "Message"};
+                final String[] header = new String[]{"Filename", "AbsolutePath"};
 
                 // TODO: write the header
                 listWriter.writeHeader(header);
@@ -127,9 +121,9 @@ public class MessageHistoryHelper {
         }
     }
 
-    private static void appendMessageHistory(User user, User friend, MessageModel messageModel)
+    private static void appendFileHistory(User user, User friend, FileInfo fileInfo)
     {
-        String CSV_FILE_PATH = String.format(MessageHistoryHelper.path, user.getId(), friend.getId());
+        String CSV_FILE_PATH = String.format(FileHistoryHelper.path, user.getId(), friend.getId());
 
         ICsvListWriter listWriter = null;
         try
@@ -141,7 +135,7 @@ public class MessageHistoryHelper {
                 final String[] header = new String[]{"User", "Message"};
 
 //            TODO: write message
-                listWriter.write(Arrays.asList(messageModel.getSender().getUsername(), messageModel.getContent()), processors);
+                listWriter.write(Arrays.asList(fileInfo.getFilename(), FileDownloadHelper.absolutePath.concat(fileInfo.getFilename())), processors);
             } finally {
                 if (listWriter != null) {
                     listWriter.close();
@@ -153,4 +147,5 @@ public class MessageHistoryHelper {
             exception.printStackTrace();
         }
     }
+
 }

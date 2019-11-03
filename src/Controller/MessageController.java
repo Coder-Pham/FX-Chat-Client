@@ -2,6 +2,8 @@ package Controller;
 
 import Connection.*;
 
+import Helper.FileDownloadHelper;
+import Helper.FileHistoryHelper;
 import Helper.MessageHistoryHelper;
 import Helper.ReadPropertyHelper;
 import Model.*;
@@ -216,13 +218,13 @@ public class MessageController implements Initializable {
 //                                            e.printStackTrace();
 //                                        }
 //                                        break;
-                                    case FILE:
-                                        try {
-                                            downFile((FileInfo) response.getData());
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                        break;
+//                                    case FILE:
+//                                        try {
+//                                            downFile((FileInfo) response.getData());
+//                                        } catch (IOException e) {
+//                                            e.printStackTrace();
+//                                        }
+//                                        break;
                                     default:
                                         break;
                                 }
@@ -286,26 +288,6 @@ public class MessageController implements Initializable {
         }
     }
 
-    private void closeStream(InputStream inputStream) {
-        try {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private void closeStream(OutputStream outputStream) {
-        try {
-            if (outputStream != null) {
-                outputStream.close();
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
     @FXML
     public void upFile(MouseEvent actionEvent) {
         final FileChooser fileChooser = new FileChooser();
@@ -333,64 +315,60 @@ public class MessageController implements Initializable {
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 } finally {
-                    closeStream(bufferedInputStream);
+                    FileDownloadHelper.closeStream(bufferedInputStream);
                 }
 
 //                TODO: Add FileInfo 2-end users
                 assert fileInfo != null;
                 fileInfo.setSender(LoginController.currentUser);
                 fileInfo.setReceiver(currentFriend);
-                Signal request = new Signal(Action.FILE, true, fileInfo, "");
-                try {
-                    ServerHandler.getObjectOutputStream().writeObject(request);
-                    ServerHandler.getObjectOutputStream().flush();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+
+                ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
+                        Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
+                        Action.FILE,
+                        fileInfo);
 
 //                TODO: Alert file sent
                 MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, "INCOMING FILE: " + fileSend.getName());
-                request = new Signal(Action.MESSAGE, true, messageModel, "");
-//                try {
-//                    appendHistoryMessage(messageModel);
-//                    refreshMessage(messageModel);
-//                    ServerHandler.getObjectOutputStream().writeObject(request);
-//                    ServerHandler.getObjectOutputStream().flush();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
+                ClientTalker.sendRequestTo(this.currentFriendAddress.getAddress(),
+                        Integer.parseInt(Objects.requireNonNull(ReadPropertyHelper.getProperty("clientlistener_port"))),
+                        Action.MESSAGE,
+                        messageModel);
+
+                this.refreshMessage(messageModel);
+                MessageHistoryHelper.writeMessageHistory(LoginController.currentUser, this.currentFriend, messageModel);
             }
         }
     }
 
     private boolean downFile(FileInfo fileInfo) throws IOException {
-        BufferedOutputStream bufferedOutputStream = null;
+//        BufferedOutputStream bufferedOutputStream = null;
+//
+////        TODO: Check Download folder exist
+//        File directory = new File(getCurrentDir() + "/Resources/Download");
+//        if (!directory.exists())
+//            directory.mkdir();
+//
+////        TODO: Download file
+//        try {
+//            if (fileInfo != null) {
+//                File fileReceive = new File(getCurrentDir() + "/Resources/Download/".concat(fileInfo.getFilename()));
+//                bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileReceive));
+//                bufferedOutputStream.write(fileInfo.getDataBytes());
+//                bufferedOutputStream.flush();
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            return false;
+//        } finally {
+//            closeStream(bufferedOutputStream);
+//        }
 
-//        TODO: Check Download folder exist
-        File directory = new File(getCurrentDir() + "/Resources/Download");
-        if (!directory.exists())
-            directory.mkdir();
-
-//        TODO: Download file
-        try {
-            if (fileInfo != null) {
-                File fileReceive = new File(getCurrentDir() + "/Resources/Download/".concat(fileInfo.getFilename()));
-                bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(fileReceive));
-                bufferedOutputStream.write(fileInfo.getDataBytes());
-                bufferedOutputStream.flush();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            closeStream(bufferedOutputStream);
-        }
-
-//        TODO: Write filename to HISTORY FILE
-        assert fileInfo != null;
-        appendHistoryFile(fileInfo);
-        if (currentFriend.getId() == fileInfo.getSender().getId())
-            refreshFile(fileInfo.getFilename());
+////        TODO: Write filename to HISTORY FILE
+//        assert fileInfo != null;
+//        appendHistoryFile(fileInfo);
+//        if (currentFriend.getId() == fileInfo.getSender().getId())
+////            refreshFile(fileInfo.getFilename());
 
         return true;
     }
@@ -477,33 +455,13 @@ public class MessageController implements Initializable {
             }
         }
 
-
-//        if (checkHistory(this.currentFriend))
-//            loadHistoryMessage();
-//        else
-//            createHistoryMessage(this.currentFriend);
-//
-//        if (checkHistoryFile(this.currentFriend))
-//            loadHistoryFile();
-//        else
-//            createHistoryFile();
-        // Load history message
-    }
-
-    private void createHistoryMessage(User user) throws IOException {
-        String CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), user.getId());
-        ICsvListWriter listWriter = null;
-        try {
-            listWriter = new CsvListWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
-
-            final CellProcessor[] processors = getProcessors();
-            final String[] header = new String[]{"User", "Message"};
-
-            // TODO: write the header
-            listWriter.writeHeader(header);
-        } finally {
-            if (listWriter != null) {
-                listWriter.close();
+        HashMap<String, String> fileList = FileHistoryHelper.readFileHistory(LoginController.currentUser,this.currentFriend);
+        if(fileList.size() > 0)
+        {
+            ArrayList<String> fileNameList = new ArrayList<>(fileList.keySet());
+            for (int i = 0; i < fileNameList.size(); i++ )
+            {
+                this.refreshFile(fileNameList.get(i),fileList.get(fileNameList.get(i)));
             }
         }
     }
@@ -531,55 +489,7 @@ public class MessageController implements Initializable {
         this.messageContainer.getChildren().add(containMessageButton);
     }
 
-//    private void appendHistoryMessage(MessageModel msg) throws IOException {
-//        String CSV_FILE_PATH;
-//        if (msg.getSender().getId() == LoginController.currentUser.getId())
-//            CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), msg.getReceiver().getId());
-//        else
-//            CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), msg.getSender().getId());
-//        ICsvListWriter listWriter = null;
-//        try {
-//            listWriter = new CsvListWriter(new FileWriter(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH, true), CsvPreference.STANDARD_PREFERENCE);
-//
-//            final CellProcessor[] processors = getProcessors();
-//            final String[] header = new String[]{"User", "Message"};
-//
-////            TODO: write message
-//            listWriter.write(Arrays.asList(msg.getSender().getUsername(), msg.getContent()), processors);
-//        } finally {
-//            if (listWriter != null) {
-//                listWriter.close();
-//            }
-//        }
-//    }
-
     @SuppressWarnings("resource")
-//    private void loadHistoryMessage() throws IOException {
-//        String CSV_FILE_PATH = String.format("%d-%d-message.csv", LoginController.currentUser.getId(), this.currentFriend.getId());
-//        ICsvListReader listReader = null;
-//        try {
-//            listReader = new CsvListReader(new FileReader(getCurrentDir() + "/Resources/History/" + CSV_FILE_PATH), CsvPreference.STANDARD_PREFERENCE);
-//
-//            listReader.getHeader(true);
-//            final CellProcessor[] processors = getProcessors();
-//
-//            List<Object> messageList;
-//            while ((messageList = listReader.read(processors)) != null){
-//                if (messageList.get(0).equals(LoginController.currentUser.getUsername())) {
-//                    MessageModel messageModel = new MessageModel(LoginController.currentUser, this.currentFriend, messageList.get(1).toString());
-//                    refreshMessage(messageModel);
-//                } else if (messageList.get(0).equals(this.currentFriend.getUsername())) {
-//                    MessageModel messageModel = new MessageModel(this.currentFriend, LoginController.currentUser, messageList.get(1).toString());
-//                    refreshMessage(messageModel);
-//                }
-//            }
-//        } finally {
-//            if (listReader != null){
-//                listReader.close();
-//            }
-//        }
-//    }
-
     private boolean checkHistoryFile(User user) {
         String RECEIVE_FILE_PATH = String.format("%d-%d-file.txt", LoginController.currentUser.getId(), user.getId());
         File history = new File(getCurrentDir() + "/Resources/History/" + RECEIVE_FILE_PATH);
@@ -604,11 +514,11 @@ public class MessageController implements Initializable {
         String filename;
         while ((filename = bufferedReader.readLine()) != null) {
 //        TODO: call refreshFile(filename) to render open file button
-            refreshFile(filename);
+//            refreshFile(filename);
         }
     }
 
-    private void refreshFile(String filename) {
+    public void refreshFile(String filename, String path) {
 //        TODO: Render open file button in dynamicFileList
         InputStream inputIcon = getClass().getResourceAsStream("/Resources/Images/download.png");
         Image image = new Image(inputIcon);
@@ -621,7 +531,7 @@ public class MessageController implements Initializable {
 //        TODO: setOnAction for button to open file
         file.setOnAction(e -> {
             try {
-                desktop.open(new File(getCurrentDir() + "/Resources/Download/".concat(filename)));
+                desktop.open(new File(path));
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
