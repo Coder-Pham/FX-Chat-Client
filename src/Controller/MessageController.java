@@ -73,18 +73,6 @@ public class MessageController implements Initializable {
 
     //    P2P Section
     public UserAddress currentFriendAddress = new UserAddress(new User(-1, "", "", ""),"127.0.0.1");
-    public static Thread fxServerThread;
-    public static Thread fxClientThread;
-    public static ServerSocket fxServer;
-    public static Client currentClient;
-
-    private static CellProcessor[] getProcessors() {
-        final CellProcessor[] processors = new CellProcessor[] {
-                new NotNull(), // Nickname
-                new NotNull(), // Message
-        };
-        return processors;
-    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -288,41 +276,6 @@ public class MessageController implements Initializable {
 
                                         refreshUserList(filterUserAddress(userAddressList.getUserAddresses()));
                                         break;
-//                                    case MESSAGE:
-//                                        MessageModel message = (MessageModel) response.getData();
-//
-////                                        TODO: Check for history to read - write
-//                                        try {
-//                                            if (!checkHistory(message.getSender())) {
-//                                                try {
-//                                                    createHistoryMessage(message.getSender());
-//                                                } catch (IOException e) {
-//                                                    e.printStackTrace();
-//                                                }
-//                                            }
-//                                        } catch (UnsupportedEncodingException e) {
-//                                            e.printStackTrace();
-//                                        }
-//
-//                                        try {
-//                                            if (message.getSender().getUsername().equals(currentFriend.getUsername())) {
-////                                                appendHistoryMessage(message);
-//                                                refreshMessage(message);
-//                                            } else if (!message.getSender().getUsername().equals(currentFriend.getUsername())) {
-////                                                appendHistoryMessage(message);
-//                                                notification(message.getSender());
-//                                            }
-//                                        } catch (IOException e) {
-//                                            e.printStackTrace();
-//                                        }
-//                                        break;
-//                                    case FILE:
-//                                        try {
-//                                            downFile((FileInfo) response.getData());
-//                                        } catch (IOException e) {
-//                                            e.printStackTrace();
-//                                        }
-//                                        break;
                                     default:
                                         break;
                                 }
@@ -458,7 +411,11 @@ public class MessageController implements Initializable {
 //        TODO: setOnAction for button to open file
         file.setOnAction(e -> {
             try {
-                desktop.open(new File(path));
+                File filePath = new File(path);
+                if (filePath.exists())
+                {
+                    desktop.open(new File(path));
+                }
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
