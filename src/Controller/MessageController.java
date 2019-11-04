@@ -348,6 +348,7 @@ public class MessageController implements Initializable {
         this.currentFriend = user;
         this.currentFriendAddress = userAddress;
         messageContainer.getChildren().clear();
+        this.dynamicFileList.getChildren().clear();
         clearNotification();
 
         ArrayList<MessageModel> messageModels = MessageHistoryHelper.readMessageHistory(LoginController.currentUser,this.currentFriend);
