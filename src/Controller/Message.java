@@ -170,8 +170,10 @@ public class Message implements Initializable {
                     textMessage.appendText(System.getProperty("line.separator"));
                 } else {
                     String text = textMessage.getText();
-                    if (text == null)
-                        text = "\n";
+
+                    if (text.trim().isEmpty())
+                        return;
+
                     System.out.println("Message sent: " + text);
 
 //                    TODO: Send message to Server - Write down CSV
