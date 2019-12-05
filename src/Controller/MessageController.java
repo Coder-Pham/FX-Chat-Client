@@ -140,8 +140,10 @@ public class MessageController implements Initializable {
                     textMessage.appendText(System.getProperty("line.separator"));
                 } else {
                     String text = textMessage.getText();
-                    if (text == null)
-                        text = "\n";
+                    if(text.trim().isEmpty())
+                    {
+                        return;
+                    }
                     System.out.println("Message sent: " + text);
 
 //                    TODO: Send message to Server - Write down CSV
@@ -257,6 +259,7 @@ public class MessageController implements Initializable {
             HBox.setMargin(container, new Insets(0, 3, 5, 0));
         }
         this.messageContainer.getChildren().add(containMessageButton);
+        this.messageContainer.heightProperty().addListener(observable -> messageScrollArea.setVvalue(1D));
     }
 
     private void createServerListener()
