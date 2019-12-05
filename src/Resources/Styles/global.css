@@ -13,3 +13,12 @@
     -fx-background-radius: 8;
     -fx-background-color: #014EF2;
 }
+
+@font-face {
+    font-family: 'EmojiOneColor.otf';
+    src: url('EmojiOneColor.otf');
+}
+
+.textMessage {
+    -fx-font-family: EmojiOneColor;
+}

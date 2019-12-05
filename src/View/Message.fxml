@@ -79,7 +79,8 @@
                   </ScrollPane>
                         <HBox fx:id="chatArea" prefHeight="0.0" prefWidth="399.0">
                             <children>
-                                <JFXTextArea fx:id="textMessage" prefHeight="39.0" prefWidth="530.0" unFocusColor="#4f91ff">
+                                <JFXTextArea fx:id="textMessage" prefHeight="39.0" prefWidth="530.0"
+                                             unFocusColor="#4f91ff" styleClass="textMessage">
                                     <HBox.margin>
                                         <Insets bottom="5.0" left="20.0" />
                                     </HBox.margin>
