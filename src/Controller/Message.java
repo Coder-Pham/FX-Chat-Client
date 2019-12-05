@@ -69,6 +69,7 @@ public class Message implements Initializable {
     private Thread serverListener;
     private AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private User currentFriend = new User(-1, "", "", "");
+    private HashMap<String, Boolean> UserNotification = new HashMap<String, Boolean>();
 
     private static CellProcessor[] getProcessors() {
         final CellProcessor[] processors = new CellProcessor[] {
@@ -227,6 +228,7 @@ public class Message implements Initializable {
                 friend.setStyle("-fx-background-color: #8186d5; ");
                 dynamicUserOnlineList.getChildren().remove(i);
                 dynamicUserOnlineList.getChildren().add(0, friend);
+                this.UserNotification.put(sender.getUsername(), true);
                 break;
             }
         }
@@ -239,6 +241,7 @@ public class Message implements Initializable {
                 friend.setStyle("-fx-background-color: #FFFFFF; ");
                 dynamicUserOnlineList.getChildren().remove(i);
                 dynamicUserOnlineList.getChildren().add(i, friend);
+                this.UserNotification.put(currentFriend.getUsername(), false);
                 break;
             }
         }
@@ -388,6 +391,9 @@ public class Message implements Initializable {
             user.setContentDisplay(ContentDisplay.RIGHT);
             user.setMinWidth(this.dynamicUserOnlineList.getPrefWidth());
             user.setAlignment(Pos.BASELINE_RIGHT);
+
+            if (this.UserNotification.containsKey(lst.get(i).getUsername()) && this.UserNotification.get(lst.get(i).getUsername()))
+                user.setStyle("-fx-background-color: #8186d5; ");
             this.dynamicUserOnlineList.getChildren().add(i, user);
         }
     }
