@@ -73,14 +73,17 @@
                         </HBox>
                         <ScrollPane fx:id="messageScrollArea" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" prefHeight="693.0" prefWidth="226.0" style="-fx-box-border: transparent;" VBox.vgrow="NEVER">
                      <content>
-                         <VBox fx:id="messageContainer" minHeight="-Infinity" minWidth="-Infinity" prefWidth="450.0"
-                               style="-fx-background-color: white;"/>
+                         <VBox fx:id="messageContainer" minHeight="-Infinity" minWidth="-Infinity" prefWidth="450.0" style="-fx-background-color: white;" />
                      </content>
                   </ScrollPane>
                         <HBox fx:id="chatArea" prefHeight="0.0" prefWidth="399.0">
                             <children>
-                                <JFXTextArea fx:id="textMessage" prefHeight="39.0" prefWidth="530.0"
-                                             unFocusColor="#4f91ff" styleClass="textMessage">
+                        <ImageView fx:id="emoji" fitHeight="73.0" fitWidth="94.0" pickOnBounds="true" preserveRatio="true">
+                           <HBox.margin>
+                              <Insets bottom="5.0" left="10.0" />
+                           </HBox.margin>
+                        </ImageView>
+                                <JFXTextArea fx:id="textMessage" prefHeight="39.0" prefWidth="530.0" unFocusColor="#4f91ff">
                                     <HBox.margin>
                                         <Insets bottom="5.0" left="20.0" />
                                     </HBox.margin>
@@ -119,10 +122,9 @@
                                         </Label>
                                     </children>
                                 </HBox>
-                                <ScrollPane fx:id="DownladFileList" fitToWidth="true" hbarPolicy="NEVER" pannable="true"
-                                            prefHeight="500.0" prefWidth="225.0" style="-fx-box-border: transparent;">
+                                <ScrollPane fx:id="DownladFileList" fitToWidth="true" hbarPolicy="NEVER" pannable="true" prefHeight="500.0" prefWidth="225.0" style="-fx-box-border: transparent;">
                                     <content>
-                                        <VBox fx:id="dynamicFileList" alignment="CENTER_RIGHT" prefWidth="225.0"/>
+                                        <VBox fx:id="dynamicFileList" alignment="CENTER_RIGHT" prefWidth="225.0" />
                                     </content>
                                 </ScrollPane>
                             </children>

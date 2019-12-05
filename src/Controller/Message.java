@@ -61,6 +61,8 @@ public class Message implements Initializable {
     private JFXButton fileIcon;
     @FXML
     private VBox dynamicFileList;
+    @FXML
+    private ImageView emoji;
 
     private Desktop desktop = Desktop.getDesktop();
 
@@ -173,6 +175,8 @@ public class Message implements Initializable {
 
                     if (text.trim().isEmpty())
                         return;
+                    else if(text.equals("::Smiling"))
+                        emoji.setImage(new Image("Resources/Images/happy.png"));
 
                     System.out.println("Message sent: " + text);
 
@@ -439,6 +443,19 @@ public class Message implements Initializable {
 
     private void refreshMessage(MessageModel msg) {
 //        TODO: Push message to scene
+        String text = msg.getContent();
+
+        if (text.contains("::SMILE"))
+            emoji.setImage(new Image("Resources/Images/smile.png"));
+        else if (text.contains("::HAPPY"))
+            emoji.setImage(new Image("Resources/Images/happy.png"));
+        else if (text.contains("::UNHAPPY"))
+            emoji.setImage(new Image("Resources/Images/unhappy.png"));
+        else if (text.contains("::ANGRY"))
+            emoji.setImage(new Image("Resources/Images/angry.png"));
+        else if (text.contains("::LOVE"))
+            emoji.setImage(new Image("Resources/Images/love.png"));
+
         JFXButton container = new JFXButton(msg.getContent());
         container.setContentDisplay(ContentDisplay.CENTER);
         container.setAlignment(Pos.BASELINE_CENTER);
