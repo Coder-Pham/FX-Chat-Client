@@ -456,6 +456,7 @@ public class Message implements Initializable {
             HBox.setMargin(container, new Insets(0, 3, 5, 0));
         }
         this.messageContainer.getChildren().add(containMessageButton);
+        this.messageContainer.heightProperty().addListener(observable -> messageScrollArea.setVvalue(1D));
     }
 
     private void appendHistoryMessage(MessageModel msg) throws IOException {
