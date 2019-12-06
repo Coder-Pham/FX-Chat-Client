@@ -7,11 +7,13 @@
 .login-button{
     -fx-background-radius: 8;
     -fx-background-color: #60A526;
+    -fx-cursor: hand;
 }
 
 .register-button{
     -fx-background-radius: 8;
     -fx-background-color: #014EF2;
+    -fx-cursor: hand;
 }
 
 @font-face {
