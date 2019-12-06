@@ -33,6 +33,8 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
 import org.supercsv.cellprocessor.constraint.NotNull;
 import org.supercsv.cellprocessor.ift.CellProcessor;
@@ -447,35 +449,55 @@ public class Message implements Initializable {
         }
     }
 
+
+
     private void refreshMessage(MessageModel msg) {
 //        TODO: Push message to scene
         String text = msg.getContent();
 
-        if (text.contains("::SMILE"))
-            emoji.setImage(new Image("Resources/Images/smile.png"));
-        else if (text.contains("::HAPPY"))
-            emoji.setImage(new Image("Resources/Images/happy.png"));
-        else if (text.contains("::UNHAPPY"))
-            emoji.setImage(new Image("Resources/Images/unhappy.png"));
-        else if (text.contains("::ANGRY"))
-            emoji.setImage(new Image("Resources/Images/angry.png"));
-        else if (text.contains("::LOVE"))
-            emoji.setImage(new Image("Resources/Images/love.png"));
+        TextFlow container = new TextFlow();
 
-        JFXButton container = new JFXButton(msg.getContent());
-        container.setContentDisplay(ContentDisplay.CENTER);
-        container.setAlignment(Pos.BASELINE_CENTER);
+        String[] splitText = text.split(" ");
+
+        for(int i = 0; i < splitText.length; i++) {
+            Text txt = new Text(splitText[i]);
+            ImageView icon = new ImageView();
+            icon.setFitHeight(15);
+            icon.setFitWidth(15);
+            if (splitText[i].equals("::SMILE")) {
+                emoji.setImage(new Image("Resources/Images/smile.png"));
+                icon.setImage(new Image("Resources/Images/smile.png"));
+            } else if (splitText[i].equals("::HAPPY")) {
+                emoji.setImage(new Image("Resources/Images/happy.png"));
+                icon.setImage(new Image("Resources/Images/happy.png"));
+            } else if (splitText[i].equals("::UNHAPPY")) {
+                emoji.setImage(new Image("Resources/Images/unhappy.png"));
+                icon.setImage(new Image("Resources/Images/unhappy.png"));
+            } else if (splitText[i].equals("::ANGRY")) {
+                emoji.setImage(new Image("Resources/Images/angry.png"));
+                icon.setImage(new Image("Resources/Images/angry.png"));
+            } else if (splitText[i].equals("::LOVE")) {
+                emoji.setImage(new Image("Resources/Images/love.png"));
+                icon.setImage(new Image("Resources/Images/love.png"));
+            } else {
+                container.getChildren().add(txt);
+                container.getChildren().add(new Text(" "));
+                continue;
+            }
+            container.getChildren().add(icon);
+            container.getChildren().add(new Text(" "));
+        }
+
+        container.setPadding(new Insets(5, 5, 5, 5));
         HBox containMessageButton = new HBox();
         containMessageButton.setMinWidth(this.messageContainer.getPrefWidth());
         if (Login.currentUser.getUsername().equals(msg.getSender().getUsername())) {
-            container.setStyle("-fx-background-color: #4298FB; -fx-text-fill: white; -fx-max-width : 240px");
-            container.setWrapText(true);
+            container.setStyle("-fx-background-color: #4298FB; -fx-text-fill: white; -fx-max-width : 240px; -fx-background-radius: 8;");
             containMessageButton.getChildren().add(container);
             containMessageButton.setAlignment(Pos.BASELINE_LEFT);
             HBox.setMargin(container, new Insets(0, 0, 5, 3));
         } else {
-            container.setStyle("-fx-background-color: #F1EFF0; -fx-text-fill: black; -fx-max-width : 240px");
-            container.setWrapText(true);
+            container.setStyle("-fx-background-color: #F1EFF0; -fx-text-fill: black; -fx-max-width : 240px; -fx-background-radius: 8;");
             containMessageButton.getChildren().add(container);
             containMessageButton.setAlignment(Pos.BASELINE_RIGHT);
             HBox.setMargin(container, new Insets(0, 3, 5, 0));
